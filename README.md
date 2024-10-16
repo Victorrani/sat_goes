@@ -8,4 +8,5 @@ v1 - criação do arquivo environment.yml
 
 v2 - Atualização dos diretórios para que possa ser rodado em qualquer lugar que o usuário escolher (não concluido)
 
+em construção
 
