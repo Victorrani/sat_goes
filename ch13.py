@@ -11,20 +11,47 @@ import warnings
 # Ignorar todos os avisos
 warnings.filterwarnings("ignore")
 
+DIRSCRIPT = os.getcwd()
+DIRSHAPE = os.path.join(DIRSCRIPT, 'shapefile')
+DIRFIG = os.path.join(DIRSCRIPT, 'fig_dados')
 
-# ---------------------------------------------------------------------------------
-# -- LENDO O SHAPEFILE E OS DADOS
-# ---------------------------------------------------------------------------------
-DIRFIGS = '/home/victor/USP/satelite/fig_dados/20240214_22/ch13/'
-# Caminho do novo diretório 'figs'
-new_dir = os.path.join(DIRFIGS, 'figs')
+# Listando casos disponíveis
+casos = os.listdir(DIRFIG)
 
-# Criar o diretório 'figs' se não existir
-os.makedirs(new_dir, exist_ok=True)
-arquivos = sorted(os.listdir(DIRFIGS))
+if not casos:
+    print("Nenhum caso encontrado no diretório de figuras.")
+else:
+    print("Casos disponíveis:")
+    print("\n".join(casos))
+
+    # Interação com o usuário para escolha do caso
+    escolha_mapa = input('Qual caso você deseja plotar o mapa? ')
+    
+    if escolha_mapa in casos:
+        print(f'Você escolheu o caso: {escolha_mapa}')
+    else:
+        print(f'O caso "{escolha_mapa}" não foi encontrado.')
+
+caminho_escolha = os.path.join(DIRFIG, escolha_mapa)
+
+canais = os.listdir(caminho_escolha)
+print("\nCanais disponíveis:")
+print("\n".join(canais))
+
+escolha_canal = input('Qual canal você deseja plotar o mapa? ')
+canal_escolha = os.path.join(caminho_escolha, escolha_canal)
+
+print(canal_escolha)
+
+caminho_fig = os.path.join(canal_escolha, 'fig')
+if not os.path.exists(caminho_fig):
+    os.makedirs(caminho_fig)
+    print(f'Diretório "fig" criado em: {caminho_fig}')
+else:
+    print(f'O diretório "fig" já existe em: {caminho_fig}')
 
 # Lendo o shapefile do Brasil (certifique-se de que o caminho esteja correto)
-shapefile_path = 'BR_UF_2019.shp'  # Coloque o caminho correto do seu shapefile
+shapefile_path = os.path.join(DIRSHAPE, 'BR_UF_2019.shp')
 
 # ---------------------------------------------------------------------------------
 # -- DEFININDO PALETAS DE CORES SEM CINZA
@@ -45,17 +72,11 @@ cmapPB_adjusted[:50, :] = cmapCO_adjusted  # Inserindo a paleta colorida nas pri
 # Definindo o mapa de cores final sem tons de cinza
 cmap_TbINPE_adjusted = cm.ListedColormap(cmapPB_adjusted)
 
-
-# ---------------------------------------------------------------------------------
-# -- PLOTEANDO OS DADOS COM A PALETA SEM CINZA E BARRA DE CORES VERTICAL
-# ---------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------
-# -- PLOTEANDO OS DADOS COM A BARRA DE CORES AO LADO DIREITO
-# ---------------------------------------------------------------------------------
-for i in arquivos:
+arquivos_netCDF = sorted([f for f in os.listdir(canal_escolha) if f.endswith('.nc')])
+for i in arquivos_netCDF:
     if i.endswith('.nc'):  # Apenas arquivos com extensão .nc
         try:
-            arq_entrada = xr.open_dataset(os.path.join(DIRFIGS, i), engine='netcdf4')
+            arq_entrada = xr.open_dataset(os.path.join(canal_escolha, i), engine='netcdf4')
             
             data_str = i.split('_')[1][:12]
             print(f'Criando a imagem da data {data_str}')
@@ -97,7 +118,7 @@ for i in arquivos:
             # Título
             plt.title(f"Akará GOES16 CH13 - {data_str} UTC", loc='left') 
             file_name = f"AKARA_{data_str}.png"
-            plt.savefig(os.path.join(new_dir, file_name), dpi=300)
+            plt.savefig(os.path.join(caminho_fig, file_name), dpi=300)
             plt.close(fig)
         except Exception as e:
             print(f"Erro ao processar o arquivo {i}: {e}")
