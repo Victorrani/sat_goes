@@ -76,7 +76,7 @@ diretorio_canal = os.path.join(diretorio_data, canal_download)
 os.makedirs(diretorio_data, exist_ok=True)
 os.makedirs(diretorio_canal, exist_ok=True)
 
-passo = input('Digite o passo de tempo em minutos: ')
+passo = int(input('Digite o passo de tempo em minutos: '))
 # Definindo o passo de tempo em minutos
 passo_tempo = passo
 
@@ -89,7 +89,7 @@ print(f'\nFoi selecionado o canal "{canal_download}" para as datas:')
 print(f' - Data de início: {dado_inicio}')
 print(f' - Data final:    {dado_fim}')
 print(f' - Passo de tempo: {passo_tempo} minutos\n')
-
+332483
 # Verificando a existência das datas escolhidas
 print(f'Será verificado a existência das datas escolhidas...\n')
 
