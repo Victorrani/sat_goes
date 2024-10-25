@@ -34,16 +34,16 @@ else:
 
 caminho_escolha = os.path.join(DIRFIG, escolha_mapa)
 
-canais = os.listdir(caminho_escolha)
+canais = [arquivo for arquivo in os.listdir(caminho_escolha) if arquivo.startswith('ch')]
+
 print("\nCanais disponíveis:")
 print("\n".join(canais))
-
 escolha_canal = input('Qual canal você deseja plotar o mapa? ')
 canal_escolha = os.path.join(caminho_escolha, escolha_canal)
 
 print(canal_escolha)
 
-caminho_fig = os.path.join(canal_escolha, 'fig')
+caminho_fig = os.path.join(caminho_escolha, 'fig')
 if not os.path.exists(caminho_fig):
     os.makedirs(caminho_fig)
     print(f'Diretório "fig" criado em: {caminho_fig}')
@@ -53,9 +53,9 @@ else:
 # Lendo o shapefile do Brasil (certifique-se de que o caminho esteja correto)
 shapefile_path = os.path.join(DIRSHAPE, 'BR_UF_2019.shp')
 
-# ---------------------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # -- DEFININDO PALETAS DE CORES SEM CINZA
-# ---------------------------------------------------------------------------------
+# ----------------------------------------------------------------------
 
 # Paleta sem tons de cinza, ajustando as cores para temperaturas
 palCO_new_adjusted = ["#000000", "#FF0000", "#FFFF00", "#00FF7F", "#0033FF", "#ADD8E6"]
