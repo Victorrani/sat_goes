@@ -58,16 +58,18 @@ shapefile_path = os.path.join(DIRSHAPE, 'BR_UF_2019.shp')
 # ----------------------------------------------------------------------
 
 # Paleta sem tons de cinza, ajustando as cores para temperaturas
-palCO_new_adjusted = ["#000000", "#FF0000", "#FFFF00", "#00FF7F", "#0033FF", "#ADD8E6"]
+palCO_new_adjusted = ["#FF0000", "#FFC0CB", "#ADD8E6", "#00008B", "#FFFF00", "#FFA500"]
+
+
 cmapCO_new_adjusted = cm.LinearSegmentedColormap.from_list("IR_clean_adjusted", palCO_new_adjusted, N=20)
 
 # Aplicando a paleta suave com 25 pontos (metade do original)
-cmapCO_adjusted = cmapCO_new_adjusted(np.linspace(0, 1, 50))  # 25 divisões na paleta colorida
+cmapCO_adjusted = cmapCO_new_adjusted(np.linspace(0, 1, 80))  # 25 divisões na paleta colorida
 
 # Criando a paleta sem cinza com 120 pontos e adicionando as cores ajustadas
 cmapPB_adjusted = cm.LinearSegmentedColormap.from_list("", ["white", "black"])
-cmapPB_adjusted = cmapPB_adjusted(np.linspace(0, 1, 120))  # 120 divisões na paleta total
-cmapPB_adjusted[:50, :] = cmapCO_adjusted  # Inserindo a paleta colorida nas primeiras 25 divisões
+cmapPB_adjusted = cmapPB_adjusted(np.linspace(0, 1, 145))  # 120 divisões na paleta total
+cmapPB_adjusted[:80, :] = cmapCO_adjusted  # Inserindo a paleta colorida nas primeiras 25 divisões
 
 # Definindo o mapa de cores final sem tons de cinza
 cmap_TbINPE_adjusted = cm.ListedColormap(cmapPB_adjusted)
@@ -117,7 +119,7 @@ for i in arquivos_netCDF:
 
             # Título
             plt.title(f"Akará GOES16 CH13 - {data_str} UTC", loc='left') 
-            file_name = f"AKARA_{data_str}.png"
+            file_name = f"ch13_AKARA_{data_str}.png"
             plt.savefig(os.path.join(caminho_fig, file_name), dpi=300)
             plt.close(fig)
         except Exception as e:
