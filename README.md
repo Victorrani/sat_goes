@@ -18,8 +18,9 @@ conda env create -f environment.yml
 
 ### Download
 
-
 python get_sat.py
+
+### Plot
 
 python plot_sat.py
 
