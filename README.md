@@ -26,7 +26,7 @@ python plot_sat.py
 ```
 
 ## Estrutura
-
+```bash
 sat_goes/
 ├── get_sat.py              # Download
 ├── produto_download.py     # Funções de download
@@ -34,10 +34,11 @@ sat_goes/
 ├── produt_plot.py          # Funções de plotagem
 ├── shapefile/              # Shapefiles do Brasil
 └── fig_dados/              # Dados e imagens
+```
 
 ## Autoria
 Victor Ranieri - Desenvolvimento, lógica e implementação
-DeepSeek - Organização do código, boas práticas e documentação
+DeepSeek - Organização do código e documentação
 
 ## Próximas etapas
 
