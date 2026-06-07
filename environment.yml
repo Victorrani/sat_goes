@@ -1,4 +1,4 @@
-name: victorpy
+name: sat_goes
 channels:
   - conda-forge
   - defaults

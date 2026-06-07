@@ -1,17 +1,45 @@
-# sat_goes
+# SAT_GOES - Download e Plotagem de Dados GOES
 
-2024/10/16 
-#1 - Projeto inicial. Contém 2 scripts get_sat.py e ch13.py que faz download e mapas do canal 13
-#2 - criação do arquivo environment.yml
-#3 - Atualização dos diretórios concluidos. 
-2024/11/10
-#1 - Prduto True Color adicionado
-#2 - Processamento de dados ch01, ch02, ch03 (precisam ter as mesmas datas) - em desenvolvimento
-2024/01/14
-#1 - Dados do MERGE (chuva) para download adicionado
-#2 - Produto chuva acumulada - em desenvolvimente
-#3 - Repensar o get_sat.py para download de tempos grandes - em desenvolvimento
+Scripts para baixar e plotar imagens dos satélites **GOES-16** e **GOES-19** do CPTEC/INPE.
 
+## Funcionalidades
 
+- Download de canais individuais (ch01 a ch16);
+- Download de True Color (canais 1,2,3);
+- Plotagem automática com shapefile do Brasil;
+- Domínio América do Sul e Central;
 
+## Como usar
+
+Criar o ambiente conda com dependências
+
+```bash
+conda env create -f environment.yml
+
+### Download
+
+```bash
+python get_sat.py
+```bash
+python plot_sat.py
+
+## Estrutura
+
+sat_goes/
+├── get_sat.py              # Download
+├── produto_download.py     # Funções de download
+├── plot_sat.py             # Plotagem
+├── produt_plot.py          # Funções de plotagem
+├── shapefile/              # Shapefiles do Brasil
+└── fig_dados/              # Dados e imagens
+
+## Autoria
+Victor Ranieri - Desenvolvimento, lógica e implementação
+DeepSeek - Organização do código, boas práticas e documentação
+
+## Próximas etapas
+
+Criação de módulo de imagem de satélite com reanálise ERA5 ou previsões GFS (plot_model.py)
+
+útlima atualização: 2026/06/07
 
