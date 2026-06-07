@@ -18,9 +18,9 @@ conda env create -f environment.yml
 
 ### Download
 
-```bash
+
 python get_sat.py
-```bash
+
 python plot_sat.py
 
 ## Estrutura
