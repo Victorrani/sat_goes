@@ -38,6 +38,7 @@ sat_goes/
 
 ## Autoria
 Victor Ranieri - Desenvolvimento, lógica e implementação
+
 DeepSeek - Organização do código e documentação
 
 ## Próximas etapas
