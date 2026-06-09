@@ -48,7 +48,7 @@ Criação de módulo de imagem de satélite com reanálise ERA5 ou previsões GF
 útlima atualização: 2026/06/07
 
 O que funciona 100%
--Downloads e plots True color
--Downloads e plots ch02 e ch13
+-Downloads e plots True color GOES16 e GOES19
+-Downloads e plots ch02 e ch13 GOES16 e GOES19
 
 
