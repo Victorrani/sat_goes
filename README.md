@@ -50,5 +50,6 @@ Criação de módulo de imagem de satélite com reanálise ERA5 ou previsões GF
 O que funciona 100%
 -Downloads e plots True color GOES16 e GOES19
 -Downloads e plots ch02 e ch13 GOES16 e GOES19
+-Download dados MERGE e IMERGE -> ainda faltam alguns ajustes mas da para usar
 
 
