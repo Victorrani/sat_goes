@@ -23,8 +23,7 @@ data_final = input("Digite a data final (formato YYYY-MM-DD): ")
 results = earthaccess.search_data(
     short_name="GPM_3IMERGHH",
     version="07",
-    temporal=(f"{data_inicial} 00:00:00", f"{data_final} 23:30:00"),
-    bounding_box=(-180, -90, 180, 90)   
+    temporal=(f"{data_inicial} 00:00:00", f"{data_final} 23:30:00") 
 )
 
 download_path = os.path.join(diretorio_atual, "IMERG_data")
