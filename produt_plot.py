@@ -421,11 +421,15 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
             else:
                 ch01 = ch01.coarsen(lat=2, lon=2, boundary='trim').mean()
                 ch01.data = ch01.data / 100
-            
+            # Inverte para corrigir orientação (para ambos os satélites)
+            ch01 = ch01.isel(lat=slice(None, None, -1))
+
             ch02 = arq2.Band1
             ch02 = ch02.coarsen(lat=2, lon=2, boundary='trim').mean()
             ch02.data = ch02.data / 100
-            
+            # Inverte para corrigir orientação
+            ch02 = ch02.isel(lat=slice(None, None, -1))
+
             ch03 = arq3.Band1
             if sat == 'goes19':
                 ch03 = ch03.isel(lat=slice(0, -1), lon=slice(0, -1))
@@ -433,7 +437,9 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
                 ch03.data = ch03.data / 100
             else:
                 ch03 = ch03.coarsen(lat=2, lon=2, boundary='trim').mean()
-                ch03.data = ch03.data / 100 
+                ch03.data = ch03.data / 100
+            # Inverte para corrigir orientação
+            ch03 = ch03.isel(lat=slice(None, None, -1))
                 
             # Composição RGB
             R = np.flipud(ch02.data)
@@ -495,14 +501,16 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
             
             # Título
             if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {data_str} UTC"
+                titulo = f"{titulo_personalizado} | {sat.upper()} | {data_str} UTC"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{data_str}.png"
             else:
                 titulo = f"{sat.upper()} | True Color | {data_str} UTC"
+                nome_arquivo = f"{sat.upper()}_true_color_{data_str}.png"
             
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
             
             # Salvar figura
-            nome_arquivo = f"{sat.upper()}_{caso}_true_color_{data_str}.png"
+            nome_arquivo = nome_arquivo
             plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
             plt.close(fig)
             
