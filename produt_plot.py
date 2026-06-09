@@ -109,19 +109,19 @@ def detectar_satelite(caminho_caso, nome_pasta):
     """
     Detecta o satélite automaticamente (primeiro por metadado, depois pelo nome da pasta)
     """
-    # 1. Tentar ler do metadado
+    
     sat = ler_metadados_satelite(caminho_caso)
     if sat:
         print(f"   📄 Satélite detectado pelo metadado: {sat.upper()}")
         return sat
     
-    # 2. Tentar extrair do nome da pasta
+    
     sat = extrair_satelite_do_nome(nome_pasta)
     if sat:
         print(f"   📁 Satélite detectado pelo nome da pasta: {sat.upper()}")
         return sat
     
-    # 3. Se não conseguir, retorna None
+    
     print(f"   ⚠️ Não foi possível detectar o satélite!")
     return None
 
@@ -176,7 +176,7 @@ def obter_extent_usuario():
     print("\n" + "="*50)
     print("🌍 DEFINIÇÃO DA ÁREA DE PLOTAGEM")
     print("="*50)
-    print("Exemplo: -60 (longitude oeste) a -30 (leste) e -40 (sul) a -15 (norte)")
+    print("Limites máximos: -115 (longitude oeste) a -25 (leste) e -55 (sul) a 34 (norte)")
     
     try:
         lon_min = float(input("Longitude mínima (Oeste, ex: -85): "))
@@ -196,6 +196,7 @@ def obter_titulo_usuario():
     print("📝 DEFINIÇÃO DO TÍTULO")
     print("="*50)
     
+    print('Evite nome com ascentuação e espaços para melhor compatibilidade de arquivos.')
     titulo = input("Digite o título do gráfico (ou pressione Enter para usar padrão): ").strip()
     if not titulo:
         return None
@@ -338,14 +339,16 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             
             # Título com satélite
             if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {sat.upper()} |\n{canal.upper()} | {data_str} UTC"
+                titulo = f"{titulo_personalizado} | {sat.upper()} | {canal.upper()} | {data_str} UTC"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{canal}_{data_str}.png"
             else:
                 titulo = f"{sat.upper()} | {canal.upper()} | {data_str} UTC"
+                nome_arquivo = f"{sat.upper()}_{canal}_{data_str}.png"
             
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
             
             # Nome do arquivo com satélite
-            nome_arquivo = f"{sat.upper()}_{caso}_{canal}_{data_str}.png"
+            nome_arquivo = nome_arquivo
             plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=300, bbox_inches='tight')
             plt.close(fig)
             
