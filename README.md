@@ -28,12 +28,18 @@ python plot_sat.py
 ## Estrutura
 ```bash
 sat_goes/
-├── get_sat.py              # Download
-├── produto_download.py     # Funções de download
-├── plot_sat.py             # Plotagem
-├── produt_plot.py          # Funções de plotagem
-├── shapefile/              # Shapefiles do Brasil
-└── fig_dados/              # Dados e imagens
+├── environment.yml # ambiente estável
+├── fig_dados # diretório para dados e imagens
+├── get_IMERG.py # download IMERG half Hourly
+├── get_MERGE.py # download MERGE 
+├── get_sat.py # download dados de satélite
+├── IMERG_data # diretório para dados IMERG
+├── model_sat.py # script em desenvolvimento
+├── plot_sat.py # script de plot
+├── produto_download.py # script auxiliar download
+├── produt_plot.py # script auxiliar plot
+├── README.md 
+
 ```
 
 ## Autoria
