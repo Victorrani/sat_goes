@@ -38,7 +38,9 @@ sat_goes/
 ├── plot_sat.py # script de plot
 ├── produto_download.py # script auxiliar download
 ├── produt_plot.py # script auxiliar plot
-├── README.md 
+├── README.md
+└── shapefile # shapefile BR
+
 
 ```
 
