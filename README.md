@@ -60,4 +60,11 @@ O que funciona 100%
 -Downloads e plots ch02 e ch13 GOES16 e GOES19
 -Download dados MERGE e IMERGE -> ainda faltam alguns ajustes mas da para usar
 
+## Exemplos de plotagem
 
+### True Color - Furacão Melissa (GOES-19)
+*26/10/2025 - 15:00 UTC*
+
+![Furacão Melissa - GOES-19 True Color](docs/MELISSA_GOES19_202510261500.png)
+
+![Ciclone Akará - GOES-16 ch02](docs/AKARÁ_GOES16_ch02_202402191500.png)
