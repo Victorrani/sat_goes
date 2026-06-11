@@ -63,6 +63,6 @@ O que funciona 100%
 ## Exemplos de plotagem
 
 
-![Furacão Melissa - GOES-19 True Color](docs/MELISSA_GOES19_202510261500.png)
+![Furacão Melissa - GOES-19 True Color](/home/victor/USP/docs/MELISSA_GOES19_202510261500.png)
 
-![Ciclone Akará - GOES-16 ch02](docs/AKARA_GOES16_ch02_202402191500.png)
+![Ciclone Akará - GOES-16 ch02](/home/victor/USP/sat_goes/docs/AKARA_GOES16_ch02_202402191500.png)
