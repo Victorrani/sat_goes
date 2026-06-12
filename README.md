@@ -3,13 +3,14 @@
 **Scripts para download e visualização de imagens dos satélites GOES-16 e GOES-19, desenvolvidos para a comunidade brasileira de meteorologia.**
 
 > **Autor:** Victor Ranieri (IAG/USP) | Mestrando em Meteorologia no PGMET/CPTEC/INPE  
-> **Objetivo:** Criar um repositório **aberto**, **customizável**, **simples** e totalmente em **português** para facilitar o uso de imagens de satélite no Brasil e América do Sul.
+> **Objetivo:** Criar um repositório **aberto**, **customizável**, **simples** e totalmente em **português** para facilitar a utilização e divulgação de ferramentas de análise de satélite e chuva entre estudantes e profissionais de meteorologia no Brasil.
 
 ---
 
 ## 🛰️ Funcionalidades
 
 - Download de canais individuais (ch01 a ch16);
+- Paleta de cores customizável;
 - Download de **True Color** (composição dos canais 1, 2 e 3);
 - Plotagem automática com shapefile do Brasil;
 - Domínio focado na **América do Sul e Central** (por enquanto);
@@ -55,7 +56,7 @@ sat_goes/
 ✅ O que funciona 100%
 Download e plotagem True Color para GOES-16 e GOES-19
 
-Download e plotagem dos canais ch02 (visível) e ch13 (infravermelho) – GOES-16 e GOES-19
+Download e plotagem dos canais ch01 até ch16 – GOES-16 e GOES-19
 
 Download dos dados MERGE e IMERG (ainda sem plot)
 
