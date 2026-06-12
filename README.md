@@ -93,8 +93,8 @@ DeepSeek – Organização do código e documentação
 📅 Última atualização
 2026/06/12
 
+Ajude a encontrar/criar paletas de cores para as imagens.
+
 Contato: victor.ranieri@inpe.br | victor.ranieri90@gmail.com
 
 
-Contato:
-victor.ranieri@inpe.br | victor.ranieri90@gmail.com

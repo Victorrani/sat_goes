@@ -237,7 +237,7 @@ def obter_colormap_usuario():
     print("      - inferno (preto-amarelo)")
     print()
     print("   Para canais VAPOR (ch08-ch10):")
-    print("      - Spectral_r (colorido padrão)")
+    print("      - Inferno (colorido padrão)")
     print("      - RdYlBu_r (vermelho-azul)")
     print("      - coolwarm (frio-quente)")
     print()
@@ -259,6 +259,7 @@ def obter_colormap_usuario():
     print()
     print("   📷 Colormaps em escala de cinza:")
     print("      - gray, bone, pink, copper")
+    print()
     print("Os colormaps são os mesmos da biblioteca Matplotlib. Para mais opções, consulte: https://matplotlib.org/stable/tutorials/colors/colormaps.html")
     print()
     
@@ -316,7 +317,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
         converte_celsius = False
     elif canal in canais_vapor:
         tipo_canal = 'vapor'
-        cmap_padrao = 'Spectral_r'
+        cmap_padrao = 'inferno'
         vmin, vmax = -110, 60
         label = 'Temperatura (°C)'
         converte_celsius = True
