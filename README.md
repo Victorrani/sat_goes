@@ -1,68 +1,92 @@
 # SAT_GOES - Download e Plotagem de Dados GOES
 
-Scripts para baixar e plotar imagens dos satélites **GOES-16** e **GOES-19** do CPTEC/INPE.
+**Scripts para download e visualização de imagens dos satélites GOES-16 e GOES-19, desenvolvidos para a comunidade brasileira de meteorologia.**
 
-## Funcionalidades
+> **Autor:** Victor Ranieri (IAG/USP) | Mestrando em Meteorologia no PGMET/CPTEC/INPE  
+> **Objetivo:** Criar um repositório **aberto**, **customizável**, **simples** e totalmente em **português** para facilitar o uso de imagens de satélite no Brasil e América do Sul.
+
+---
+
+## 🛰️ Funcionalidades
 
 - Download de canais individuais (ch01 a ch16);
-- Download de True Color (canais 1,2,3);
+- Download de **True Color** (composição dos canais 1, 2 e 3);
 - Plotagem automática com shapefile do Brasil;
-- Domínio América do Sul e Central;
+- Domínio focado na **América do Sul e Central** (por enquanto);
+- Integração com dados de precipitação (MERGE e IMERG – em desenvolvimento).
 
-## Como usar
+---
 
-Criar o ambiente conda com dependências
+## 📦 Como usar
+
+Crie o ambiente Conda com todas as dependências:
 
 ```bash
 conda env create -f environment.yml
+```
+Download dos dados de satélite
 
-### Download
-
+```bash
 python get_sat.py
+```
+Plotagem das imagens
 
-### Plot
-
+```bash
 python plot_sat.py
 ```
 
-## Estrutura
+📁 Estrutura do repositório (Ainda será melhorado)
 ```bash
 sat_goes/
-├── environment.yml # ambiente estável
-├── fig_dados # diretório para dados e imagens
-├── get_IMERG.py # download IMERG half Hourly
-├── get_MERGE.py # download MERGE 
-├── get_sat.py # download dados de satélite
-├── IMERG_data # diretório para dados IMERG
-├── model_sat.py # script em desenvolvimento
-├── plot_sat.py # script de plot
-├── produto_download.py # script auxiliar download
-├── produt_plot.py # script auxiliar plot
+├── environment.yml          # ambiente estável
+├── fig_dados/               # dados e imagens geradas
+├── get_IMERG.py             # download IMERG half-hourly
+├── get_MERGE.py             # download MERGE
+├── get_sat.py               # download de satélite
+├── IMERG_data/              # dados IMERG
+├── model_sat.py             # em desenvolvimento
+├── plot_sat.py              # plot principal
+├── produto_download.py      # funções auxiliares de download
+├── produt_plot.py           # funções auxiliares de plot
 ├── README.md
-└── shapefile # shapefile BR
-
-
+└── shapefile/               # shapefile do Brasil
 ```
 
-## Autoria
-Victor Ranieri - Desenvolvimento, lógica e implementação
+✅ O que funciona 100%
+Download e plotagem True Color para GOES-16 e GOES-19
 
-DeepSeek - Organização do código e documentação
+Download e plotagem dos canais ch02 (visível) e ch13 (infravermelho) – GOES-16 e GOES-19
 
-## Próximas etapas
+Download dos dados MERGE e IMERG (ainda sem plot)
 
-Criação de módulo de imagem de satélite com reanálise ERA5 ou previsões GFS (plot_model.py)
+🚀 Próximos passos
+IMERG: imagens de acumulado de chuva e GIFs animados
 
-útlima atualização: 2026/06/07
+MERGE: imagens de acumulado de chuva e GIFs animados
 
-O que funciona 100%
--Downloads e plots True color GOES16 e GOES19
--Downloads e plots ch02 e ch13 GOES16 e GOES19
--Download dados MERGE e IMERGE -> ainda faltam alguns ajustes mas da para usar
+Full Disk GOES: download diretamente do AWS (imagens continentais completas)
 
-## Exemplos de plotagem
+Novos satélites: expansão para outros sensores e plataformas
 
+Script exclusivo para GIFs: automatizar animações temporais
 
+Integração futura: módulo de satélite + reanálise ERA5 ou previsões GFS (plot_model.py)
+
+📸 Exemplos de plotagem
+Furacão Melissa (GOES-19 True Color)
 ![Furacão Melissa - GOES-19 True Color](/docs/MELISSA_GOES19_202510261500.png)
 
+Ciclone Akará (GOES-16 ch02)
 ![Ciclone Akará - GOES-16 ch02](/docs/AKARA_GOES16_ch02_202402191600.png)
+
+👥 Autoria
+Victor Ranieri – Desenvolvimento, lógica e implementação
+
+DeepSeek – Organização do código e documentação
+
+📅 Última atualização
+2026/06/12
+
+
+Contato:
+victor.ranieri@inpe.br | victor.ranieri90@gmail.com
