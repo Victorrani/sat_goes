@@ -2,15 +2,17 @@
 plot_sat.py - Script principal para plotagem de imagens GOES
 """
 
-import os
 from produt_plot import (
     listar_casos_disponiveis,
     selecionar_caso,
     obter_extent_usuario,
     obter_titulo_usuario,
+    obter_colormap_usuario,
     plot_prod,
+    detectar_se_e_true_color,
     detectar_canais_disponiveis
 )
+import os
 
 def main():
     print()
@@ -31,17 +33,18 @@ def main():
     if not caso:
         return
     
-    # Verificar o que tem dentro do caso
+    # 3. Verificar produto disponível
     caminho_caso = os.path.join('fig_dados', caso)
     canais = detectar_canais_disponiveis(caminho_caso)
+    eh_true_color = detectar_se_e_true_color(caminho_caso)
     
-    # 3. Detectar automaticamente se é True Color ou Simple Channel
     print("\n" + "="*50)
     print("🔍 DETECTANDO PRODUTO")
     print("="*50)
     
-    # Verificar se tem ch01, ch02, ch03
-    if 'ch01' in canais and 'ch02' in canais and 'ch03' in canais:
+    cmap = None
+    
+    if eh_true_color:
         print("✅ Detectado: TRUE COLOR (canais 01, 02, 03 disponíveis)")
         print("\nOpções disponíveis:")
         print("   1. Plotar True Color")
@@ -52,37 +55,28 @@ def main():
             produto = 'true_color'
         else:
             produto = 'simple_channel'
+            cmap = obter_colormap_usuario()
     else:
         print("✅ Detectado: SIMPLE CHANNEL (canal único)")
         produto = 'simple_channel'
+        cmap = obter_colormap_usuario()
     
-    # =========================================================
-    # SATÉLITE É DETECTADO AUTOMATICAMENTE PELO NOME DA PASTA
-    # Não precisa perguntar ao usuário!
-    # =========================================================
-    
-    # 4. Definir extent (opcional)
+    # 4. Configurar extent
     print("\n" + "="*50)
     print("🌍 CONFIGURAÇÃO DA ÁREA")
     print("="*50)
     opcao_extent = input("Deseja definir área personalizada? (s/n): ").strip().lower()
+    extent = obter_extent_usuario() if opcao_extent == 's' else None
     
-    extent = None
-    if opcao_extent == 's':
-        extent = obter_extent_usuario()
-    
-    # 5. Definir título (opcional)
+    # 5. Configurar título
     print("\n" + "="*50)
     print("📝 CONFIGURAÇÃO DO TÍTULO")
     print("="*50)
     opcao_titulo = input("Deseja título personalizado? (s/n): ").strip().lower()
+    titulo = obter_titulo_usuario() if opcao_titulo == 's' else None
     
-    titulo = None
-    if opcao_titulo == 's':
-        titulo = obter_titulo_usuario()
-    
-    # 6. Executar plotagem (satélite será detectado automaticamente)
-    plot_prod(caso, produto, extent=extent, titulo=titulo)
+    # 6. Executar plotagem
+    plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap)
 
 if __name__ == "__main__":
     main()
