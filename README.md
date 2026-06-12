@@ -53,25 +53,26 @@ sat_goes/
 └── shapefile/               # shapefile do Brasil
 ```
 
-✅ O que funciona 100%
-Download e plotagem True Color para GOES-16 e GOES-19
+✅ O que funciona 100%:
+-> Download e plotagem True Color para GOES-16 e GOES-19
 
-Download e plotagem dos canais ch01 até ch16 – GOES-16 e GOES-19
+-> Download e plotagem dos canais ch01 até ch16 – GOES-16 e GOES-19
 
-Download dos dados MERGE e IMERG (ainda sem plot)
+-> Download dos dados MERGE e IMERG
+__________________________________________________________________
 
-🚀 Próximos passos
-IMERG: imagens de acumulado de chuva e GIFs animados
+🚀 Próximos passos:
+-> IMERG: imagens de acumulado de chuva e GIFs animados
 
-MERGE: imagens de acumulado de chuva e GIFs animados
+-> MERGE: imagens de acumulado de chuva e GIFs animados
 
-Full Disk GOES: download diretamente do AWS (imagens continentais completas)
+-> Full Disk GOES: download diretamente do AWS (imagens continentais completas)
 
-Novos satélites: expansão para outros sensores e plataformas
+-> Novos satélites: expansão para outros sensores e plataformas
 
-Script exclusivo para GIFs: automatizar animações temporais
+-> Script exclusivo para GIFs: automatizar animações temporais
 
-Integração futura: módulo de satélite + reanálise ERA5 ou previsões GFS (plot_model.py)
+-> Integração futura: módulo de satélite + reanálise ERA5 ou previsões GFS (plot_model.py)
 
 📸 Exemplos de plotagem
 Furacão Melissa (GOES-19 True Color)
@@ -91,6 +92,8 @@ DeepSeek – Organização do código e documentação
 
 📅 Última atualização
 2026/06/12
+
+Contato: victor.ranieri@inpe.br | victor.ranieri90@gmail.com
 
 
 Contato:
