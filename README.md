@@ -80,6 +80,10 @@ Furacão Melissa (GOES-19 True Color)
 Ciclone Akará (GOES-16 ch02)
 ![Ciclone Akará - GOES-16 ch02](/docs/AKARA_GOES16_ch02_202402191600.png)
 
+Exemplo ch04 cor personalizada
+![Domínio completo - GOES-19 ch04](/docs/GOES19_ch04_202507101500.png)
+
+
 👥 Autoria
 Victor Ranieri – Desenvolvimento, lógica e implementação
 
