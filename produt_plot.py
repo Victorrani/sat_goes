@@ -246,7 +246,21 @@ def obter_colormap_usuario():
     print("      - Greys (cinza invertido)")
     print("      - magma_r")
     print()
-    print("   Outros colormaps: RdBu_r, YlOrRd, Blues_r, etc.")
+    print("   📊 Colormaps sequenciais:")
+    print("      - Greys, Purples, Blues, Greens, Oranges, Reds")
+    print("      - YlOrBr, YlOrRd, OrRd, PuRd, RdPu, BuPu")
+    print("      - GnBu, PuBu, YlGnBu, PuBuGn, BuGn, YlGn")
+    print()
+    print("   🎨 Colormaps perceptualmente uniformes:")
+    print("      - viridis, plasma, inferno, magma, cividis")
+    print()
+    print("   🌈 Colormaps divergentes:")
+    print("      - RdBu, RdYlBu, RdYlGn, coolwarm, seismic")
+    print()
+    print("   📷 Colormaps em escala de cinza:")
+    print("      - gray, bone, pink, copper")
+    print("Os colormaps são os mesmos da biblioteca Matplotlib. Para mais opções, consulte: https://matplotlib.org/stable/tutorials/colors/colormaps.html")
+    print()
     
     while True:
         opcao = input("\nDeseja usar colormap personalizado? (s/n): ").strip().lower()
@@ -260,7 +274,6 @@ def obter_colormap_usuario():
             return None
         else:
             print("   ❌ Opção inválida! Digite 's' para sim ou 'n' para não.")
-
 # ============================================================================
 # FUNÇÕES DE PLOTAGEM
 # ============================================================================
