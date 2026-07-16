@@ -69,7 +69,7 @@ def get_colormap(canal):
     elif canal in canais_visiveis:
         return cmap_gray, 0, 100, "Reflectance (%)"
     elif canal in canais_vapor:
-        return cmap_water_vapor, -80, 30, "Brightness Temperature (°C)"
+        return cmap_water_vapor, -80, 50, "Brightness Temperature (°C)"
     else:
         return cmap_noaa, -100, 55, "Brightness Temperature (°C)"
 
@@ -228,40 +228,7 @@ def obter_colormap_usuario():
     Retorna:
         str: Nome do colormap ou None para usar o padrão
     """
-    print("\n🎨 COLORMAPS DISPONÍVEIS:")
-    print("   Para canais VISÍVEIS (ch01-ch06):")
-    print("      - Greys_r (cinza padrão)")
-    print("      - viridis (verde-azul)")
-    print("      - plasma (roxo-amarelo)")
-    print("      - magma (vermelho-roxo)")
-    print("      - inferno (preto-amarelo)")
-    print()
-    print("   Para canais VAPOR (ch08-ch10):")
-    print("      - Inferno (colorido padrão)")
-    print("      - RdYlBu_r (vermelho-azul)")
-    print("      - coolwarm (frio-quente)")
-    print()
-    print("   Para canais IR (ch13-ch16):")
-    print("      - viridis (padrão da função)")
-    print("      - Greys (cinza invertido)")
-    print("      - magma_r")
-    print()
-    print("   📊 Colormaps sequenciais:")
-    print("      - Greys, Purples, Blues, Greens, Oranges, Reds")
-    print("      - YlOrBr, YlOrRd, OrRd, PuRd, RdPu, BuPu")
-    print("      - GnBu, PuBu, YlGnBu, PuBuGn, BuGn, YlGn")
-    print()
-    print("   🎨 Colormaps perceptualmente uniformes:")
-    print("      - viridis, plasma, inferno, magma, cividis")
-    print()
-    print("   🌈 Colormaps divergentes:")
-    print("      - RdBu, RdYlBu, RdYlGn, coolwarm, seismic")
-    print()
-    print("   📷 Colormaps em escala de cinza:")
-    print("      - gray, bone, pink, copper")
-    print()
-    print("Os colormaps são os mesmos da biblioteca Matplotlib. Para mais opções, consulte: https://matplotlib.org/stable/tutorials/colors/colormaps.html")
-    print()
+    print("Aceita colormaps matplotlib")
     
     while True:
         opcao = input("\nDeseja usar colormap personalizado? (s/n): ").strip().lower()
@@ -317,8 +284,8 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
         converte_celsius = False
     elif canal in canais_vapor:
         tipo_canal = 'vapor'
-        cmap_padrao = 'inferno'
-        vmin, vmax = -110, 60
+        cmap_padrao = 'Greys'
+        vmin, vmax = -80, 0
         label = 'Temperatura (°C)'
         converte_celsius = True
     elif canal in canais_ir:
@@ -327,13 +294,13 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
         converte_celsius = True
     elif canal == canal_curto_ir:
         tipo_canal = 'curto_ir'
-        cmap_padrao = 'magma_r'
-        vmin, vmax = -110, 60
+        cmap_padrao = 'Greys'
+        vmin, vmax = -80, 50
         label = 'Temperatura (°C)'
         converte_celsius = True
     else:
         tipo_canal = 'outro'
-        cmap_padrao = 'viridis'
+        cmap_padrao = 'Greys'
         vmin, vmax = 0, 100
         label = 'Dados'
         converte_celsius = False
@@ -372,7 +339,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
             # Features
-            ax.add_feature(cfeature.LAND, edgecolor='black', alpha=0.3)
+            #ax.add_feature(cfeature.LAND, edgecolor='black', alpha=0.3)
             ax.add_feature(cfeature.COASTLINE, linewidth=0.5, color='yellow', zorder=300)
             ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.5, color='yellow', zorder=301)
             
@@ -388,7 +355,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             dados.plot(ax=ax, cmap=cmap_uso, transform=ccrs.PlateCarree(),
                       vmin=vmin, vmax=vmax,
                       cbar_kwargs={"label": label, "orientation": "vertical",
-                                  "pad": 0.05, "aspect": 20, "shrink": 0.8, "ticks": ticks})
+                                  "pad": 0.05, "aspect": 20, "shrink": 0.8, "ticks": ticks}, extend='neither')
             
             # Extent
             if extent:
