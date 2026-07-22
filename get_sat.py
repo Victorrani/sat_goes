@@ -25,10 +25,11 @@ def main():
     print(f'\n✅ Satélite {sat.upper()} selecionado\n')
 
     # Selecionar produto
-    prod = input('Escolha o produto (true_color ou simple_chanel): ').lower()
+    prod = input('Escolha o produto (true_color, simple_chanel ou swd): ').lower()
     
-    if prod not in ['true_color', 'simple_chanel']:
+    if prod not in ['true_color', 'simple_chanel', 'swd']:  # CORRIGIDO: adicionei a aspa e corrigi o nome
         print('❌ Produto inválido!')
+        print('   Opções válidas: true_color, simple_chanel, swd')
         return
     
     # Chamar função de download

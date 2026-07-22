@@ -49,14 +49,14 @@ def criar_diretorios_base():
 
 def criar_diretorios_download(dir_fig, sat, ano, mes, dia_inicio, dia_fim, canal):
     """Cria diretórios para armazenar os downloads com nome do satélite"""
-    # Nome da pasta com satélite: goes16_20240310_10
     diretorio_data = os.path.join(dir_fig, f"{sat}_{ano}{mes}{dia_inicio}_{dia_fim}")
     diretorio_canal = os.path.join(diretorio_data, canal)
     os.makedirs(diretorio_data, exist_ok=True)
     os.makedirs(diretorio_canal, exist_ok=True)
     return diretorio_canal
 
-def salvar_metadados(diretorio, sat, prod_select, canal=None, inicio_str=None, fim_str=None, passo=None, timestamps=None):
+def salvar_metadados(diretorio, sat, prod_select, canal=None, inicio_str=None, 
+                     fim_str=None, passo=None, timestamps=None, info_extra=None):
     """Salva metadados do download em um arquivo"""
     metadata_file = os.path.join(diretorio, 'metadados.txt')
     
@@ -71,17 +71,32 @@ def salvar_metadados(diretorio, sat, prod_select, canal=None, inicio_str=None, f
         if prod_select == 'simple_chanel':
             f.write(f"Canal: {canal}\n")
         elif prod_select == 'true_color':
-            f.write(f"Canais: ch01, ch02, ch03\n")
+            f.write(f"Canais: ch01, ch02, ch03 (True Color - RGB)\n")
+            f.write(f"Composição: Vermelho (0.64µm), Verde (0.86µm), Azul (0.47µm)\n")
+        elif prod_select == 'swd':
+            f.write(f"Canais: ch13, ch15 (Split Window Difference)\n")
+            f.write(f"Fórmula: SWD = ch13 - ch15\n")
+            f.write(f"Aplicações: Detecção de nuvens baixas, fogo e neblina\n")
+        
+        if info_extra:
+            f.write("\nInformações adicionais:\n")
+            for key, value in info_extra.items():
+                f.write(f"  {key}: {value}\n")
         
         if inicio_str and fim_str:
-            f.write(f"Período: {inicio_str} a {fim_str}\n")
+            f.write(f"\nPeríodo: {inicio_str} a {fim_str}\n")
         if passo:
             f.write(f"Passo: {passo} minutos\n")
         if timestamps:
             f.write(f"\nTotal de timestamps: {len(timestamps)}\n")
-            f.write("Primeiros 10 timestamps:\n")
-            for ts in timestamps[:10]:
-                f.write(f"  {ts}\n")
+            if len(timestamps) <= 10:
+                for ts in timestamps:
+                    f.write(f"  {ts}\n")
+            else:
+                f.write("Primeiros 10 timestamps:\n")
+                for ts in timestamps[:10]:
+                    f.write(f"  {ts}\n")
+                f.write(f"  ... e mais {len(timestamps)-10} timestamps\n")
     
     print(f"📄 Metadados salvos em: {metadata_file}")
 
@@ -364,6 +379,138 @@ def baixar_true_color(sat, ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim,
     
     return resultados, timestamps_comuns
 
+# ============================================================================
+# FUNÇÕES ESPECÍFICAS PARA SWD (SPLIT WINDOW DIFFERENCE)
+# ============================================================================
+
+def baixar_swd(sat, ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo, dir_fig):
+    """
+    Baixa os canais 13 e 15 para composição SWD (Split Window Difference)
+    GARANTE que os MESMOS timestamps sejam baixados em todos os canais
+    SWD = ch13 - ch15 (diferença entre os canais do infravermelho)
+    """
+    canais_swd = ['ch13', 'ch15']
+    nome_canais = {
+        'ch13': 'IR 10.3µm - Canal Clean Window', 
+        'ch15': 'IR 12.3µm - Canal Dirty Window'
+    }
+    
+    print(f"\n{'='*60}")
+    print("🌡️ DOWNLOAD SWD (SPLIT WINDOW DIFFERENCE)")
+    print(f"{'='*60}")
+    print("Canais para SWD:")
+    for canal, nome in nome_canais.items():
+        print(f"   📍 {canal.upper()} - {nome}")
+    print(f"   📊 SWD = CH13 - CH15 (diferença split window)")
+    print(f"{'='*60}\n")
+    
+    # Gerar timestamps
+    timestamps, dado_inicio, dado_fim = gerar_timestamps_true_color(
+        ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo
+    )
+    
+    print(f"📅 Período: {dado_inicio} a {dado_fim} | Passo: {passo}min")
+    print(f"📊 Total de timestamps: {len(timestamps)}\n")
+    
+    # Verificar disponibilidade em cada canal
+    print("🔍 Verificando disponibilidade...")
+    timestamps_por_canal = {}
+    
+    for canal in canais_swd:
+        url_canal = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/{canal}/{ano}/{mes}/'
+        dados_disponiveis, prefixo, sufixo = obter_dados_disponiveis(url_canal)
+        
+        timestamps_existentes = [ts for ts in timestamps if ts in dados_disponiveis]
+        timestamps_por_canal[canal] = {
+            'timestamps': timestamps_existentes,
+            'prefixo': prefixo,
+            'sufixo': sufixo,
+            'raiz_dado': url_canal,
+            'total': len(timestamps_existentes)
+        }
+        print(f"   {canal}: {len(timestamps_existentes)}/{len(timestamps)} disponíveis")
+    
+    # Encontrar timestamps comuns
+    timestamps_comuns = sorted(set(timestamps_por_canal['ch13']['timestamps']) &
+                                set(timestamps_por_canal['ch15']['timestamps']))
+    
+    print(f"\n✨ Timestamps comuns aos 2 canais: {len(timestamps_comuns)}")
+    
+    if not timestamps_comuns:
+        print("\n❌ ERRO: Nenhum timestamp comum encontrado!")
+        return None
+    
+    # Criar diretório base com nome do satélite
+    dir_base = os.path.join(dir_fig, f"{sat}_swd_{ano}{mes}_{dia_inicio}_{dia_fim}")
+    os.makedirs(dir_base, exist_ok=True)
+    
+    # Salvar metadados
+    salvar_metadados(dir_base, sat, 'swd', 
+                     inicio_str=dado_inicio, fim_str=dado_fim, 
+                     passo=passo, timestamps=timestamps_comuns)
+    
+    # Salvar timestamps comuns em arquivo separado
+    arquivo_timestamps = os.path.join(dir_base, "timestamps_comuns.txt")
+    with open(arquivo_timestamps, 'w') as f:
+        f.write("\n".join(timestamps_comuns))
+    
+    # Baixar arquivos
+    print("\n⬇️ INICIANDO DOWNLOAD...\n")
+    resultados = {}
+    
+    for canal in canais_swd:
+        print(f"\n📡 Canal {canal.upper()}:")
+        dir_canal = os.path.join(dir_base, canal)
+        os.makedirs(dir_canal, exist_ok=True)
+        
+        info = timestamps_por_canal[canal]
+        baixados = 0
+        
+        for ts in timestamps_comuns:
+            arquivo_local = os.path.join(dir_canal, f"{info['prefixo']}{ts}{info['sufixo']}")
+            
+            if os.path.exists(arquivo_local):
+                print(f"   ⏭️  {ts} - já existe")
+                baixados += 1
+            else:
+                url = f"{info['raiz_dado']}{info['prefixo']}{ts}{info['sufixo']}"
+                try:
+                    print(f"   📥 {ts} - baixando...", end=" ")
+                    wget.download(url, arquivo_local, bar=None)
+                    print("✅")
+                    baixados += 1
+                except Exception as e:
+                    print(f"❌ Erro: {str(e)[:40]}")
+        
+        resultados[canal] = {'baixados': baixados, 'total': len(timestamps_comuns)}
+        print(f"   📊 Resumo: {baixados}/{len(timestamps_comuns)}")
+    
+    # Resumo final
+    print(f"\n{'='*60}")
+    print("📊 RESUMO SWD")
+    print(f"{'='*60}")
+    for canal, info in resultados.items():
+        status = "✅" if info['baixados'] == info['total'] else "⚠️"
+        print(f"{status} {canal}: {info['baixados']}/{info['total']}")
+    
+    print(f"\n📁 Pasta: {dir_base}")
+    print(f"📄 Metadados: {os.path.join(dir_base, 'metadados.txt')}")
+    
+    if all(info['baixados'] == info['total'] for info in resultados.values()):
+        print("\n🎉 SWD COMPLETO!")
+        print("📐 Fórmula: SWD = ch13 - ch15")
+        print("💡 Aplicação: Detecção de nuvens de baixo nível, fogo e neblina")
+    else:
+        print("\n⚠️ SWD incompleto - alguns timestamps faltando")
+    
+    print(f"{'='*60}\n")
+    
+    return resultados, timestamps_comuns
+
+# ============================================================================
+# FUNÇÕES AUXILIARES PARA VERIFICAÇÃO
+# ============================================================================
+
 def verificar_datas_correspondentes(diretorio_true_color):
     """Verifica se as datas correspondem entre os 3 canais"""
     print(f"\n{'='*60}")
@@ -402,7 +549,7 @@ def select_prod(sat, prod_select):
     Função principal que orquestra todo o processo de download
     Parâmetros:
         sat: str - 'goes16' ou 'goes19'
-        prod_select: str - 'simple_chanel' ou 'true_color'
+        prod_select: str - 'simple_chanel', 'true_color' ou 'swd'
     """
     print(f"\n{'='*50}")
     print(f"🚀 INICIANDO DOWNLOAD")
@@ -411,7 +558,8 @@ def select_prod(sat, prod_select):
     print(f"{'='*50}\n")
     
     # Verificar conexão
-    if not verificar_conexao(sat)[0]:
+    conexao, url_base = verificar_conexao(sat)
+    if not conexao:
         return False
     
     # Criar diretório base
@@ -419,63 +567,52 @@ def select_prod(sat, prod_select):
     
     # ===== TRUE COLOR =====
     if prod_select == 'true_color':
-        # Obter ano
         url_temp = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/ch01/'
         anos = obter_anos_disponiveis(url_temp)
         ano = selecionar_ano(anos)
-        
-        # Obter mês
         url_mes = f"{url_temp}{ano}/"
         meses = obter_meses_disponiveis(url_mes)
         mes = selecionar_mes(meses)
-        
-        # Obter período
         dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
-        
-        # Baixar True Color
         baixar_true_color(sat, ano, mes, dia_ini, hora_ini, dia_fim, hora_fim, passo, dir_fig)
+    
+    # ===== SWD =====
+    elif prod_select == 'swd':
+        url_temp = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/ch13/'
+        anos = obter_anos_disponiveis(url_temp)
+        ano = selecionar_ano(anos)
+        url_mes = f"{url_temp}{ano}/"
+        meses = obter_meses_disponiveis(url_mes)
+        mes = selecionar_mes(meses)
+        dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
+        baixar_swd(sat, ano, mes, dia_ini, hora_ini, dia_fim, hora_fim, passo, dir_fig)
     
     # ===== SIMPLE CHANNEL =====
     elif prod_select == 'simple_chanel':
-        # Selecionar canal
         canais, url_base = obter_canais_disponiveis(sat)
         canal = selecionar_canal(canais)
         url_canal = f"{url_base}{canal}/"
-        
-        # Selecionar ano
         anos = obter_anos_disponiveis(url_canal)
         ano = selecionar_ano(anos)
         url_ano = f"{url_canal}{ano}/"
-        
-        # Selecionar mês
         meses = obter_meses_disponiveis(url_ano)
         mes = selecionar_mes(meses)
         url_mes = f"{url_ano}{mes}/"
-        
-        # Obter período
         dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
-        
-        # Criar diretório com nome do satélite
         dir_canal = criar_diretorios_download(dir_fig, sat, ano, mes, dia_ini, dia_fim, canal)
-        
-        # Gerar timestamps
         timestamps, inicio_str, fim_str = gerar_timestamps(ano, mes, dia_ini, hora_ini, 
                                                             dia_fim, hora_fim, passo)
-        
-        # Salvar metadados
         diretorio_data = os.path.join(dir_fig, f"{sat}_{ano}{mes}{dia_ini}_{dia_fim}")
         salvar_metadados(diretorio_data, sat, 'simple_chanel', 
                          canal=canal, inicio_str=inicio_str, fim_str=fim_str, 
                          passo=passo, timestamps=timestamps)
-        
         print(f"\n📊 RESUMO: Satélite {sat.upper()} | Canal {canal} | {inicio_str} a {fim_str} | Passo: {passo}min\n")
-        
-        # Baixar
         dados_disponiveis, prefixo, sufixo = obter_dados_disponiveis(url_mes)
         processar_downloads(url_mes, timestamps, dados_disponiveis, prefixo, sufixo, dir_canal)
     
     else:
         print(f"❌ Produto '{prod_select}' inválido!")
+        print("   Opções válidas: 'simple_chanel', 'true_color', 'swd'")
         return False
     
     print(f"\n{'='*50}")
@@ -494,6 +631,6 @@ if __name__ == "__main__":
     print("="*50)
     
     sat = input('\nDigite o satélite (goes16 ou goes19): ').lower()
-    prod = input('Digite o produto (simple_chanel ou true_color): ').lower()
+    prod = input('Digite o produto (simple_chanel, true_color ou swd): ').lower()
     
     select_prod(sat, prod)

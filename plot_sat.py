@@ -10,6 +10,7 @@ from produt_plot import (
     obter_colormap_usuario,
     plot_prod,
     detectar_se_e_true_color,
+    detectar_se_e_swd,
     detectar_canais_disponiveis
 )
 import os
@@ -37,13 +38,16 @@ def main():
     caminho_caso = os.path.join('fig_dados', caso)
     canais = detectar_canais_disponiveis(caminho_caso)
     eh_true_color = detectar_se_e_true_color(caminho_caso)
+    eh_swd = detectar_se_e_swd(caminho_caso)
     
     print("\n" + "="*50)
     print("🔍 DETECTANDO PRODUTO")
     print("="*50)
     
     cmap = None
+    produto = None
     
+    # ===== TRUE COLOR =====
     if eh_true_color:
         print("✅ Detectado: TRUE COLOR (canais 01, 02, 03 disponíveis)")
         print("\nOpções disponíveis:")
@@ -56,6 +60,26 @@ def main():
         else:
             produto = 'simple_channel'
             cmap = obter_colormap_usuario()
+    
+    # ===== SWD =====
+    elif eh_swd:
+        print("✅ Detectado: SWD (canais 13 e 15 disponíveis)")
+        print("   📐 Fórmula: SWD = ch13 - ch15")
+        print("   💡 Aplicação: Detecção de nuvens baixas, fogo e neblina")
+        print("\n🎨 Configuração do colormap SWD:")
+        print("   Padrão: Azul -> Branco -> Vermelho (diferença)")
+        
+        # PLOTA SWD AUTOMATICAMENTE SEM OPÇÃO DE CANAL INDIVIDUAL
+        produto = 'swd'
+        
+        opcao_cmap = input("   Usar colormap padrão? (s/n): ").strip().lower()
+        if opcao_cmap == 'n':
+            cmap = input("   Digite o nome do colormap: ").strip()
+            print(f"   Usando colormap: {cmap}")
+        else:
+            print("   Usando colormap padrão SWD")
+    
+    # ===== SIMPLE CHANNEL =====
     else:
         print("✅ Detectado: SIMPLE CHANNEL (canal único)")
         produto = 'simple_channel'
@@ -76,7 +100,13 @@ def main():
     titulo = obter_titulo_usuario() if opcao_titulo == 's' else None
     
     # 6. Executar plotagem
-    plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap)
+    if produto:
+        print("\n" + "="*50)
+        print(f"🚀 INICIANDO PLOTAGEM: {produto.upper()}")
+        print("="*50)
+        plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap)
+    else:
+        print("❌ Nenhum produto selecionado!")
 
 if __name__ == "__main__":
     main()
