@@ -6,16 +6,22 @@
 > **Objetivo:** Criar um repositório **aberto**, **customizável**, **simples** e totalmente em **português** para facilitar a utilização e divulgação de ferramentas de análise de satélite e chuva entre estudantes e profissionais de meteorologia no Brasil.
 
 ---
+Funcionalidades
+Download de canais individuais (ch01 a ch16);
 
-## 🛰️ Funcionalidades
+Download de True Color (composição RGB - canais 1, 2 e 3);
 
-- Download de canais individuais (ch01 a ch16);
-- Paleta de cores customizável;
-- Download de **True Color** (composição dos canais 1, 2 e 3);
-- Plotagem automática com shapefile do Brasil;
-- Domínio focado na **América do Sul e Central** (por enquanto);
-- Integração com dados de precipitação (MERGE e IMERG – em desenvolvimento).
+Download de SWD (Split Window Difference - canais 13 e 15);
 
+Download de CPD (Cloud Phase Difference - canais 11 e 14);
+
+Plotagem automática com shapefile do Brasil;
+
+Paleta de cores customizável;
+
+Domínio focado na América do Sul e Central;
+
+Integração com dados de precipitação (MERGE e IMERG – em desenvolvimento).
 ---
 
 ## 📦 Como usar
@@ -54,12 +60,16 @@ python 2.plot_sat.py
 
 ```
 
-✅ O que funciona 100%:
--> Download e plotagem True Color para GOES-16 e GOES-19
+O que funciona 100%
+Download e plotagem True Color para GOES-16 e GOES-19;
 
--> Download e plotagem dos canais ch01 até ch16 – GOES-16 e GOES-19
+Download e plotagem SWD (Split Window Difference) para GOES-16 e GOES-19;
 
--> Download dos dados MERGE e IMERG
+Download e plotagem CPD (Cloud Phase Difference) para GOES-16 e GOES-19;
+
+Download e plotagem de canais individuais (ch01 a ch16) para GOES-16 e GOES-19;
+
+Download de dados de precipitação MERGE e IMERG;
 __________________________________________________________________
 
 🚀 Próximos passos:
