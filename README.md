@@ -5,7 +5,6 @@
 > **Autor:** Victor Ranieri (IAG/USP) | Mestrando em Meteorologia no PGMET/CPTEC/INPE  
 > **Objetivo:** Criar um repositório **aberto**, **customizável**, **simples** e totalmente em **português** para facilitar a utilização e divulgação de ferramentas de análise de satélite e chuva entre estudantes e profissionais de meteorologia no Brasil.
 
-SatView (fase 2) - O próximo passo 
 ---
 Funcionalidades
 Download de canais individuais (ch01 a ch16);
@@ -87,6 +86,8 @@ __________________________________________________________________
 -> Integração futura: módulo de satélite + reanálise ERA5 ou previsões GFS (plot_model.py)
 
 -> Melhoria na padronização e descrição dos produtos
+
+-> SatView (fase 2) - Mudança de ambiente e programação mais avançada 
 
 📸 Exemplos de plotagem
 Furacão Melissa (GOES-19 True Color)
