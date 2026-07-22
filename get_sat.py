@@ -25,12 +25,20 @@ def main():
     print(f'\n✅ Satélite {sat.upper()} selecionado\n')
 
     # Selecionar produto
-    prod = input('Escolha o produto (true_color, simple_chanel ou swd): ').lower()
+    print('\nOpções de produtos:')
+    print('   📊 simple_chanel - Download de canal único')
+    print('   🎨 true_color    - Composição RGB (canais 1, 2, 3)')
+    print('   🌡️ swd           - Split Window Difference (canais 13, 15)')
+    print('   ☁️ cpd           - Cloud Phase Difference (canais 11, 14)')
     
-    if prod not in ['true_color', 'simple_chanel', 'swd']:  # CORRIGIDO: adicionei a aspa e corrigi o nome
+    prod = input('\nEscolha o produto: ').lower()
+    
+    if prod not in ['true_color', 'simple_chanel', 'swd', 'cpd']:
         print('❌ Produto inválido!')
-        print('   Opções válidas: true_color, simple_chanel, swd')
+        print('   Opções válidas: true_color, simple_chanel, swd, cpd')
         return
+    
+    print(f'\n✅ Produto {prod.upper()} selecionado\n')
     
     # Chamar função de download
     select_prod(sat, prod)

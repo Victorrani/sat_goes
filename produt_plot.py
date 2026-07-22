@@ -1,7 +1,7 @@
 """
 produt_plot.py - Módulo para plotagem de imagens GOES
 Autor: Victor Ranieri e DeepSeek
-Descrição: Funções para plotar canais individuais, composição True Color e SWD
+Descrição: Funções para plotar canais individuais, composições True Color, SWD e CPD
 """
 
 import os
@@ -64,10 +64,11 @@ def get_colormap(canal, usar_noaa=False):
     # Colormap para canais de vapor d'água
     cmap_water_vapor = plt.cm.OrRd
     
-    #sdw colormap 
-    cmap_swd = 'seismic_r'
-    
+    # Colormap para diferenças (SWD e CPD)
+    cmap_diff = 'seismic_r'
+    cmap_cpd = 'jet'
 
+    
     # Definição por canal
     canais_infravermelho = ['ch07', 'ch13', 'ch14', 'ch15', 'ch16']
     canais_visiveis = ['ch01', 'ch02', 'ch03', 'ch04', 'ch05', 'ch06']
@@ -83,9 +84,11 @@ def get_colormap(canal, usar_noaa=False):
     elif canal in canais_vapor:
         return cmap_water_vapor, -80, 0, "Brightness Temperature (C)"
     elif canal == 'swd':
-        return cmap_swd, -6, 6, "SWD (K)"
+        return cmap_diff, -6, 6, "SWD (K)"
+    elif canal == 'cpd':
+        return cmap_cpd, -4, 12, "CPD (K)"
     else:
-        return cmap_gray_r, -40, 80, "SWD (K))"
+        return cmap_gray_r, -40, 80, "Brightness Temperature (C)"
 
 # ============================================================================
 # FUNÇÕES AUXILIARES DE DETECÇÃO
@@ -157,10 +160,17 @@ def detectar_se_e_true_color(caminho_caso):
 
 def detectar_se_e_swd(caminho_caso):
     """
-    Detecta se o caso é SWD
+    Detecta se o caso é SWD (Split Window Difference)
     """
     canais = detectar_canais_disponiveis(caminho_caso)
     return 'ch13' in canais and 'ch15' in canais
+
+def detectar_se_e_cpd(caminho_caso):
+    """
+    Detecta se o caso é CPD (Cloud Phase Difference)
+    """
+    canais = detectar_canais_disponiveis(caminho_caso)
+    return 'ch11' in canais and 'ch14' in canais
 
 # ============================================================================
 # FUNÇÕES DE INTERAÇÃO COM USUÁRIO
@@ -185,13 +195,14 @@ def listar_casos_disponiveis():
             # Detectar tipo de produto
             is_tc = detectar_se_e_true_color(caminho_caso)
             is_swd = detectar_se_e_swd(caminho_caso)
+            is_cpd = detectar_se_e_cpd(caminho_caso)
             
-            if is_tc and is_swd:
-                tipo = "True Color + SWD"
-            elif is_tc:
+            if is_tc:
                 tipo = "True Color"
             elif is_swd:
                 tipo = "SWD"
+            elif is_cpd:
+                tipo = "CPD"
             else:
                 tipo = "Canal(ais) individual(is)"
             
@@ -535,7 +546,7 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
     print(f"Plotagem True Color concluida!")
 
 # ============================================================================
-# FUNÇÃO DE PLOTAGEM SWD (NOVA)
+# FUNÇÃO DE PLOTAGEM SWD
 # ============================================================================
 
 def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
@@ -574,14 +585,11 @@ def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
     print(f"Satelite: {sat.upper()}")
     print(f"Formula: SWD = ch13 - ch15")
     
-    # Colormap para SWD - sempre seismic_r
-    cmap_uso = 'Spectral'
+    # Colormap para SWD
+    cmap_uso, vmin, vmax, label = get_colormap('swd')
     
-    # Limites fixos de -6 a 6
-    vmin, vmax = -6, 6
-    
-    # Ticks de 0.5 em 0.5
-    ticks = np.arange(-6, 6.5, 1)
+    # Ticks
+    ticks = np.arange(vmin, vmax + 0.5, 1)
     
     for i, ts in enumerate(timestamps_comuns, 1):
         try:
@@ -622,16 +630,16 @@ def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
                                  edgecolor='black', facecolor='none', linewidth=0.3)
             
-            # Plot SWD com limites fixos
+            # Plot SWD
             im = ax.imshow(swd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
                           transform=ccrs.PlateCarree(), cmap=cmap_uso, 
                           vmin=vmin, vmax=vmax, origin='lower')
             
-            # Colorbar com ticks de 0.5 em 0.5
+            # Colorbar
             cbar = plt.colorbar(im, ax=ax, orientation='vertical', 
                                pad=0.05, aspect=20, shrink=0.8, 
                                extend='both', ticks=ticks)
-            cbar.set_label('SWD (K)', fontsize=12)
+            cbar.set_label(label, fontsize=12)
             cbar.ax.tick_params(labelsize=10)
             
             # Extent
@@ -666,6 +674,137 @@ def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
             print(f"   ERRO ao processar {ts}: {e}")
     
     print(f"Plotagem SWD concluida!")
+
+# ============================================================================
+# FUNÇÃO DE PLOTAGEM CPD (NOVA)
+# ============================================================================
+
+def plot_cpd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
+    """
+    Plota composição CPD (Cloud Phase Difference) usando canais 11 e 14
+    CPD = ch11 - ch14 (diferença para detecção de fase de nuvens)
+    """
+    caminho_caso = os.path.join(DIRFIG, caso)
+    caminho_fig = os.path.join(caminho_caso, 'fig')
+    os.makedirs(caminho_fig, exist_ok=True)
+    
+    ch11_path = os.path.join(caminho_caso, 'ch11')
+    ch14_path = os.path.join(caminho_caso, 'ch14')
+    
+    if not all(os.path.exists(p) for p in [ch11_path, ch14_path]):
+        print(f"ERRO: Canais 11 e 14 nao encontrados em {caminho_caso}")
+        return
+    
+    ch11_files = sorted([f for f in os.listdir(ch11_path) if f.endswith('.nc')])
+    ch14_files = sorted([f for f in os.listdir(ch14_path) if f.endswith('.nc')])
+    
+    if not ch11_files or not ch14_files:
+        print(f"ERRO: Nenhum arquivo encontrado nos canais")
+        return
+    
+    # Encontrar timestamps comuns
+    timestamps_ch11 = [f.split('_')[1][:12] for f in ch11_files]
+    timestamps_ch14 = [f.split('_')[1][:12] for f in ch14_files]
+    timestamps_comuns = sorted(set(timestamps_ch11) & set(timestamps_ch14))
+    
+    if not timestamps_comuns:
+        print("ERRO: Nenhum timestamp comum entre ch11 e ch14!")
+        return
+    
+    print(f"\nPlotando {len(timestamps_comuns)} imagens CPD...")
+    print(f"Satelite: {sat.upper()}")
+    print(f"Formula: CPD = ch11 - ch14")
+    
+    # Colormap para CPD
+    cmap_uso, vmin, vmax, label = get_colormap('cpd')
+    
+    # Ticks
+    ticks = np.arange(vmin, vmax + 1, 2)
+    
+    for i, ts in enumerate(timestamps_comuns, 1):
+        try:
+            # Encontrar arquivos correspondentes
+            ch11_file = [f for f in ch11_files if ts in f][0]
+            ch14_file = [f for f in ch14_files if ts in f][0]
+            
+            print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
+            
+            # Abrir dados
+            arq11 = xr.open_dataset(os.path.join(ch11_path, ch11_file), engine='netcdf4')
+            arq14 = xr.open_dataset(os.path.join(ch14_path, ch14_file), engine='netcdf4')
+            
+            # Extrair dados
+            dados11 = arq11.Band1.data / 100 - 273.15
+            dados14 = arq14.Band1.data / 100 - 273.15
+            
+            # Calcular CPD
+            cpd = dados11 - dados14
+            
+            # Filtrar valores extremos
+            cpd = np.where(np.abs(cpd) > 50, np.nan, cpd)
+            
+            # Obter coordenadas
+            lats = arq11.lat.data
+            lons = arq11.lon.data
+            
+            # Criar figura
+            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
+            
+            # Features
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.5, color='black', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.5, color='black', zorder=301)
+            
+            # Shapefile
+            if os.path.exists(SHAPEFILE_PATH):
+                shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
+                ax.add_geometries(shapefile, ccrs.PlateCarree(),
+                                 edgecolor='black', facecolor='none', linewidth=0.3)
+            
+            # Plot CPD
+            im = ax.imshow(cpd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+                          transform=ccrs.PlateCarree(), cmap=cmap_uso, 
+                          vmin=vmin, vmax=vmax, origin='lower')
+            
+            # Colorbar
+            cbar = plt.colorbar(im, ax=ax, orientation='vertical', 
+                               pad=0.05, aspect=20, shrink=0.8, 
+                               extend='both', ticks=ticks)
+            cbar.set_label(label, fontsize=12)
+            cbar.ax.tick_params(labelsize=10)
+            
+            # Extent
+            if extent:
+                ax.set_extent(extent, crs=ccrs.PlateCarree())
+            else:
+                ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
+            
+            # Gridlines
+            gl = ax.gridlines(draw_labels=True)
+            gl.top_labels = False
+            gl.right_labels = False
+            gl.xlabel_style = {'fontsize': 14}
+            gl.ylabel_style = {'fontsize': 14}
+            
+            # Título
+            if titulo_personalizado:
+                titulo = f"{titulo_personalizado} | {sat.upper()} | CPD | {ts} UTC"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_cpd_{ts}.png"
+            else:
+                titulo = f"{sat.upper()} | Cloud Phase Difference (CPD) | {ts} UTC"
+                nome_arquivo = f"{sat.upper()}_cpd_{ts}.png"
+            
+            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
+            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            
+            arq11.close()
+            arq14.close()
+            
+        except Exception as e:
+            print(f"   ERRO ao processar {ts}: {e}")
+    
+    print(f"Plotagem CPD concluida!")
+
 # ============================================================================
 # FUNÇÃO PRINCIPAL EXPORTADA
 # ============================================================================
@@ -676,7 +815,7 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
     
     Parâmetros:
         caso: str - nome do caso
-        produto: str - 'true_color', 'simple_channel' ou 'swd'
+        produto: str - 'true_color', 'simple_channel', 'swd' ou 'cpd'
         extent: list - [lon_min, lon_max, lat_min, lat_max]
         titulo: str - título personalizado
         cmap: str - colormap personalizado (apenas para simple_channel)
@@ -719,6 +858,12 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
         print("\nPlotando Split Window Difference (SWD)...")
         print("SWD = ch13 - ch15")
         plot_swd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
+        
+    elif produto == 'cpd':
+        print("\nPlotando Cloud Phase Difference (CPD)...")
+        print("CPD = ch11 - ch14")
+        print("Aplicação: Detecção de fase de nuvens (gelo/água)")
+        plot_cpd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
         
     elif produto == 'simple_channel':
         print("\nPlotando canal individual...")
@@ -801,26 +946,3 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
     print("\n" + "="*50)
     print("PLOTAGEM CONCLUIDA!")
     print("="*50)
-
-def detectar_se_e_swd(caminho_caso):
-    """
-    Detecta se o caso é SWD (Split Window Difference)
-    Verifica se existem os canais 13 e 15 com arquivos
-    """
-    if not os.path.exists(caminho_caso):
-        return False
-    
-    ch13_path = os.path.join(caminho_caso, 'ch13')
-    ch15_path = os.path.join(caminho_caso, 'ch15')
-    
-    if not os.path.exists(ch13_path) or not os.path.exists(ch15_path):
-        return False
-    
-    # Verificar se há arquivos nos canais
-    ch13_files = [f for f in os.listdir(ch13_path) if f.endswith('.nc')]
-    ch15_files = [f for f in os.listdir(ch15_path) if f.endswith('.nc')]
-    
-    if not ch13_files or not ch15_files:
-        return False
-    
-    return True

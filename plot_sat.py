@@ -11,6 +11,7 @@ from produt_plot import (
     plot_prod,
     detectar_se_e_true_color,
     detectar_se_e_swd,
+    detectar_se_e_cpd,  # ADICIONADO
     detectar_canais_disponiveis
 )
 import os
@@ -39,6 +40,7 @@ def main():
     canais = detectar_canais_disponiveis(caminho_caso)
     eh_true_color = detectar_se_e_true_color(caminho_caso)
     eh_swd = detectar_se_e_swd(caminho_caso)
+    eh_cpd = detectar_se_e_cpd(caminho_caso)  # ADICIONADO
     
     print("\n" + "="*50)
     print("🔍 DETECTANDO PRODUTO")
@@ -66,18 +68,22 @@ def main():
         print("✅ Detectado: SWD (canais 13 e 15 disponíveis)")
         print("   📐 Fórmula: SWD = ch13 - ch15")
         print("   💡 Aplicação: Detecção de nuvens baixas, fogo e neblina")
-        print("\n🎨 Configuração do colormap SWD:")
-        print("   Padrão: Azul -> Branco -> Vermelho (diferença)")
+        print("   🎨 Colormap: seismic_r (padrão)")
         
-        # PLOTA SWD AUTOMATICAMENTE SEM OPÇÃO DE CANAL INDIVIDUAL
+        # PLOTA SWD AUTOMATICAMENTE
         produto = 'swd'
+        # cmap permanece None para usar o padrão
+    
+    # ===== CPD =====
+    elif eh_cpd:
+        print("✅ Detectado: CPD (canais 11 e 14 disponíveis)")
+        print("   📐 Fórmula: CPD = ch11 - ch14")
+        print("   💡 Aplicação: Detecção de fase de nuvens (gelo/água)")
+        print("   🎨 Colormap: seismic_r (padrão)")
         
-        opcao_cmap = input("   Usar colormap padrão? (s/n): ").strip().lower()
-        if opcao_cmap == 'n':
-            cmap = input("   Digite o nome do colormap: ").strip()
-            print(f"   Usando colormap: {cmap}")
-        else:
-            print("   Usando colormap padrão SWD")
+        # PLOTA CPD AUTOMATICAMENTE
+        produto = 'cpd'
+        # cmap permanece None para usar o padrão
     
     # ===== SIMPLE CHANNEL =====
     else:

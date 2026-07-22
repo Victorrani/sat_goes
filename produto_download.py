@@ -1,7 +1,7 @@
 """
 produto_download.py - Módulo para download de imagens GOES
 Autor: Victor Ranieri e DeepSeek
-Descrição: Funções para download de canais individuais e composição True Color
+Descrição: Funções para download de canais individuais e composições True Color, SWD e CPD
 """
 
 import os
@@ -77,6 +77,10 @@ def salvar_metadados(diretorio, sat, prod_select, canal=None, inicio_str=None,
             f.write(f"Canais: ch13, ch15 (Split Window Difference)\n")
             f.write(f"Fórmula: SWD = ch13 - ch15\n")
             f.write(f"Aplicações: Detecção de nuvens baixas, fogo e neblina\n")
+        elif prod_select == 'cpd':
+            f.write(f"Canais: ch11, ch14 (Cloud Phase Difference)\n")
+            f.write(f"Fórmula: CPD = ch11 - ch14\n")
+            f.write(f"Aplicação: Detecção de fase de nuvens (gelo/água)\n")
         
         if info_extra:
             f.write("\nInformações adicionais:\n")
@@ -508,6 +512,135 @@ def baixar_swd(sat, ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo,
     return resultados, timestamps_comuns
 
 # ============================================================================
+# FUNÇÕES ESPECÍFICAS PARA CPD (CLOUD PHASE DIFFERENCE)
+# ============================================================================
+
+def baixar_cpd(sat, ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo, dir_fig):
+    """
+    Baixa os canais 11 e 14 para composição CPD (Cloud Phase Difference)
+    GARANTE que os MESMOS timestamps sejam baixados em todos os canais
+    CPD = ch11 - ch14 (diferença para detecção de fase de nuvens)
+    """
+    canais_cpd = ['ch11', 'ch14']
+    nome_canais = {
+        'ch11': 'IR 8.5µm - Canal de Absorção de Gelo', 
+        'ch14': 'IR 11.2µm - Canal de Janela'
+    }
+    
+    print(f"\n{'='*60}")
+    print("☁️ DOWNLOAD CPD (CLOUD PHASE DIFFERENCE)")
+    print(f"{'='*60}")
+    print("Canais para CPD:")
+    for canal, nome in nome_canais.items():
+        print(f"   📍 {canal.upper()} - {nome}")
+    print(f"   📊 CPD = CH11 - CH14 (diferença para fase de nuvens)")
+    print(f"   💡 Aplicação: Detecção de fase de nuvens (gelo/água)")
+    print(f"{'='*60}\n")
+    
+    # Gerar timestamps
+    timestamps, dado_inicio, dado_fim = gerar_timestamps_true_color(
+        ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo
+    )
+    
+    print(f"📅 Período: {dado_inicio} a {dado_fim} | Passo: {passo}min")
+    print(f"📊 Total de timestamps: {len(timestamps)}\n")
+    
+    # Verificar disponibilidade em cada canal
+    print("🔍 Verificando disponibilidade...")
+    timestamps_por_canal = {}
+    
+    for canal in canais_cpd:
+        url_canal = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/{canal}/{ano}/{mes}/'
+        dados_disponiveis, prefixo, sufixo = obter_dados_disponiveis(url_canal)
+        
+        timestamps_existentes = [ts for ts in timestamps if ts in dados_disponiveis]
+        timestamps_por_canal[canal] = {
+            'timestamps': timestamps_existentes,
+            'prefixo': prefixo,
+            'sufixo': sufixo,
+            'raiz_dado': url_canal,
+            'total': len(timestamps_existentes)
+        }
+        print(f"   {canal}: {len(timestamps_existentes)}/{len(timestamps)} disponíveis")
+    
+    # Encontrar timestamps comuns
+    timestamps_comuns = sorted(set(timestamps_por_canal['ch11']['timestamps']) &
+                                set(timestamps_por_canal['ch14']['timestamps']))
+    
+    print(f"\n✨ Timestamps comuns aos 2 canais: {len(timestamps_comuns)}")
+    
+    if not timestamps_comuns:
+        print("\n❌ ERRO: Nenhum timestamp comum encontrado!")
+        return None
+    
+    # Criar diretório base com nome do satélite
+    dir_base = os.path.join(dir_fig, f"{sat}_cpd_{ano}{mes}_{dia_inicio}_{dia_fim}")
+    os.makedirs(dir_base, exist_ok=True)
+    
+    # Salvar metadados
+    salvar_metadados(dir_base, sat, 'cpd', 
+                     inicio_str=dado_inicio, fim_str=dado_fim, 
+                     passo=passo, timestamps=timestamps_comuns)
+    
+    # Salvar timestamps comuns em arquivo separado
+    arquivo_timestamps = os.path.join(dir_base, "timestamps_comuns.txt")
+    with open(arquivo_timestamps, 'w') as f:
+        f.write("\n".join(timestamps_comuns))
+    
+    # Baixar arquivos
+    print("\n⬇️ INICIANDO DOWNLOAD...\n")
+    resultados = {}
+    
+    for canal in canais_cpd:
+        print(f"\n📡 Canal {canal.upper()}:")
+        dir_canal = os.path.join(dir_base, canal)
+        os.makedirs(dir_canal, exist_ok=True)
+        
+        info = timestamps_por_canal[canal]
+        baixados = 0
+        
+        for ts in timestamps_comuns:
+            arquivo_local = os.path.join(dir_canal, f"{info['prefixo']}{ts}{info['sufixo']}")
+            
+            if os.path.exists(arquivo_local):
+                print(f"   ⏭️  {ts} - já existe")
+                baixados += 1
+            else:
+                url = f"{info['raiz_dado']}{info['prefixo']}{ts}{info['sufixo']}"
+                try:
+                    print(f"   📥 {ts} - baixando...", end=" ")
+                    wget.download(url, arquivo_local, bar=None)
+                    print("✅")
+                    baixados += 1
+                except Exception as e:
+                    print(f"❌ Erro: {str(e)[:40]}")
+        
+        resultados[canal] = {'baixados': baixados, 'total': len(timestamps_comuns)}
+        print(f"   📊 Resumo: {baixados}/{len(timestamps_comuns)}")
+    
+    # Resumo final
+    print(f"\n{'='*60}")
+    print("📊 RESUMO CPD")
+    print(f"{'='*60}")
+    for canal, info in resultados.items():
+        status = "✅" if info['baixados'] == info['total'] else "⚠️"
+        print(f"{status} {canal}: {info['baixados']}/{info['total']}")
+    
+    print(f"\n📁 Pasta: {dir_base}")
+    print(f"📄 Metadados: {os.path.join(dir_base, 'metadados.txt')}")
+    
+    if all(info['baixados'] == info['total'] for info in resultados.values()):
+        print("\n🎉 CPD COMPLETO!")
+        print("📐 Fórmula: CPD = ch11 - ch14")
+        print("💡 Aplicação: Detecção de fase de nuvens (gelo/água)")
+    else:
+        print("\n⚠️ CPD incompleto - alguns timestamps faltando")
+    
+    print(f"{'='*60}\n")
+    
+    return resultados, timestamps_comuns
+
+# ============================================================================
 # FUNÇÕES AUXILIARES PARA VERIFICAÇÃO
 # ============================================================================
 
@@ -549,7 +682,7 @@ def select_prod(sat, prod_select):
     Função principal que orquestra todo o processo de download
     Parâmetros:
         sat: str - 'goes16' ou 'goes19'
-        prod_select: str - 'simple_chanel', 'true_color' ou 'swd'
+        prod_select: str - 'simple_chanel', 'true_color', 'swd' ou 'cpd'
     """
     print(f"\n{'='*50}")
     print(f"🚀 INICIANDO DOWNLOAD")
@@ -587,6 +720,17 @@ def select_prod(sat, prod_select):
         dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
         baixar_swd(sat, ano, mes, dia_ini, hora_ini, dia_fim, hora_fim, passo, dir_fig)
     
+    # ===== CPD =====
+    elif prod_select == 'cpd':
+        url_temp = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/ch11/'
+        anos = obter_anos_disponiveis(url_temp)
+        ano = selecionar_ano(anos)
+        url_mes = f"{url_temp}{ano}/"
+        meses = obter_meses_disponiveis(url_mes)
+        mes = selecionar_mes(meses)
+        dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
+        baixar_cpd(sat, ano, mes, dia_ini, hora_ini, dia_fim, hora_fim, passo, dir_fig)
+    
     # ===== SIMPLE CHANNEL =====
     elif prod_select == 'simple_chanel':
         canais, url_base = obter_canais_disponiveis(sat)
@@ -612,7 +756,7 @@ def select_prod(sat, prod_select):
     
     else:
         print(f"❌ Produto '{prod_select}' inválido!")
-        print("   Opções válidas: 'simple_chanel', 'true_color', 'swd'")
+        print("   Opções válidas: 'simple_chanel', 'true_color', 'swd', 'cpd'")
         return False
     
     print(f"\n{'='*50}")
@@ -631,6 +775,6 @@ if __name__ == "__main__":
     print("="*50)
     
     sat = input('\nDigite o satélite (goes16 ou goes19): ').lower()
-    prod = input('Digite o produto (simple_chanel, true_color ou swd): ').lower()
+    prod = input('Digite o produto (simple_chanel, true_color, swd ou cpd): ').lower()
     
     select_prod(sat, prod)
