@@ -59,8 +59,8 @@ python 2.plot_sat.py
 └── shapefile
 
 ```
+O que funciona 100%:
 
-O que funciona 100%
 Download e plotagem True Color para GOES-16 e GOES-19;
 
 Download e plotagem SWD (Split Window Difference) para GOES-16 e GOES-19;
