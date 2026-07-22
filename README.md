@@ -28,29 +28,30 @@ conda env create -f environment.yml
 Download dos dados de satélite
 
 ```bash
-python get_sat.py
+python 1.get_sat.py
 ```
 Plotagem das imagens
 
 ```bash
-python plot_sat.py
+python 2.plot_sat.py
 ```
 
 📁 Estrutura do repositório (Ainda será melhorado)
 ```bash
-sat_goes/
-├── environment.yml          # ambiente estável
-├── fig_dados/               # dados e imagens geradas
-├── get_IMERG.py             # download IMERG half-hourly
-├── get_MERGE.py             # download MERGE
-├── get_sat.py               # download de satélite
-├── IMERG_data/              # dados IMERG
-├── model_sat.py             # em desenvolvimento
-├── plot_sat.py              # plot principal
-├── produto_download.py      # funções auxiliares de download
-├── produt_plot.py           # funções auxiliares de plot
+├── 1.get_sat.py
+├── 2.plot_sat.py
+├── docs
+├── environment.yml
+├── fig_dados
+├── produto_download.py
+├── produt_plot.py
 ├── README.md
-└── shapefile/               # shapefile do Brasil
+├── scripts
+│   ├── get_IMERG.py
+│   ├── get_MERGE.py
+│   └── model_sat.py
+└── shapefile
+
 ```
 
 ✅ O que funciona 100%:
