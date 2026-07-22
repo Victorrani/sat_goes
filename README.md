@@ -1,10 +1,11 @@
-# SAT_GOES - Download e Plotagem de Dados GOES
+# SAT_GOES - Download e Plotagem de Dados GOES (fase 1)
 
 **Scripts para download e visualização de imagens dos satélites GOES-16 e GOES-19, desenvolvidos para a comunidade brasileira de meteorologia.**
 
 > **Autor:** Victor Ranieri (IAG/USP) | Mestrando em Meteorologia no PGMET/CPTEC/INPE  
 > **Objetivo:** Criar um repositório **aberto**, **customizável**, **simples** e totalmente em **português** para facilitar a utilização e divulgação de ferramentas de análise de satélite e chuva entre estudantes e profissionais de meteorologia no Brasil.
 
+SatView (fase 2) - O próximo passo 
 ---
 Funcionalidades
 Download de canais individuais (ch01 a ch16);
