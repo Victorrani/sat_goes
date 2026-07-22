@@ -65,7 +65,7 @@ def get_colormap(canal, usar_noaa=False):
     cmap_water_vapor = plt.cm.OrRd
     
     # Colormap para diferenças (SWD e CPD)
-    cmap_diff = 'seismic_r'
+    cmap_diff = 'Spectral'
     cmap_cpd = 'jet'
 
     

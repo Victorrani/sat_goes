@@ -85,6 +85,8 @@ __________________________________________________________________
 
 -> Integração futura: módulo de satélite + reanálise ERA5 ou previsões GFS (plot_model.py)
 
+-> Melhoria na padronização e descrição dos produtos
+
 📸 Exemplos de plotagem
 Furacão Melissa (GOES-19 True Color)
 ![Furacão Melissa - GOES-19 True Color](/docs/MELISSA_GOES19_202510261500.png)
@@ -92,8 +94,12 @@ Furacão Melissa (GOES-19 True Color)
 Ciclone Akará (GOES-16 ch02)
 ![Ciclone Akará - GOES-16 ch02](/docs/AKARA_GOES16_ch02_202402191600.png)
 
-Exemplo ch04 cor personalizada
-![Domínio completo - GOES-19 ch04](/docs/GOES19_ch04_202507101500.png)
+Exemplo CPD (Cloud Phase Difference)
+![CPD - GOES-19](/docs/Melissa_Hurricane_GOES19_cpd_202510271100.png)
+
+Exemplo SWD (Split Window Difference) 
+![SWD - GOES-19](/docs/Melissa_Hurricane_GOES19_swd_202510260300.png)
+
 
 
 👥 Autoria
