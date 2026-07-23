@@ -91,10 +91,10 @@ __________________________________________________________________
 
 📸 Exemplos de plotagem
 Furacão Melissa (GOES-19 True Color)
-![Furacão Melissa - GOES-19 - True Color](/docsMelissa_Hurricane_GOES19_202510281500.png/)
+![Furacão Melissa - GOES-19 - True Color](/docs/Melissa_Hurricane_GOES19_202510281500.png/)
 
 Ciclone Akará (GOES-16 ch13)
-![Furacão Melissa - GOES-19 - ch13](/docs/Melissa_Hurricane_GOES19_202510281500.png)
+![Furacão Melissa - GOES-19 - ch13](/docs/Melissa_Hurricane_GOES19_ch13_202510281500.png)
 
 Exemplo CPD (Cloud Phase Difference)
 ![Furacão Melissa - GOES-19 - CPD ](/docs/Melissa_Hurricane_GOES19_cpd_202510281500.png)
