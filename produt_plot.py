@@ -70,7 +70,7 @@ def get_colormap(canal, usar_noaa=False):
 
     
     # Definição por canal
-    canais_infravermelho = ['ch07', 'ch13', 'ch14', 'ch15', 'ch16']
+    canais_infravermelho = ['ch07', 'ch13','ch11', 'ch12' 'ch14', 'ch15', 'ch16']
     canais_visiveis = ['ch01', 'ch02', 'ch03', 'ch04', 'ch05', 'ch06']
     canais_vapor = ['ch08', 'ch09', 'ch10']
     
@@ -303,7 +303,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
     # Classificação dos canais
     canais_visiveis = ['ch01', 'ch02', 'ch03', 'ch04', 'ch05', 'ch06']
     canais_vapor = ['ch08', 'ch09', 'ch10']
-    canais_ir = ['ch07', 'ch13', 'ch14', 'ch15', 'ch16']
+    canais_ir = ['ch07', 'ch11', 'ch12' 'ch13', 'ch14', 'ch15', 'ch16']
     
     # Configurações por tipo
     if canal in canais_visiveis:
@@ -362,14 +362,14 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
             # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.5, color='yellow', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.5, color='yellow', zorder=301)
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black', zorder=301)
             
             # Shapefile
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(), 
-                                 edgecolor='yellow', facecolor='none', linewidth=0.3)
+                                 edgecolor='black', facecolor='none', linewidth=0.6)
             
             # Plot
             ticks = np.arange(0, 101, 20) if tipo_canal == 'visivel' else np.arange(vmin, vmax+1, 20)
@@ -502,13 +502,13 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
             # Criar figura
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.5, color='yellow')
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.5, color='yellow')
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black')
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black')
             
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='yellow', facecolor='none', linewidth=0.3)
+                                 edgecolor='black', facecolor='none', linewidth=0.6)
             
             ax.imshow(RGB[::-1], extent=[ch02.lon.min(), ch02.lon.max(),
                                           ch02.lat.min(), ch02.lat.max()],
@@ -621,14 +621,14 @@ def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
             # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.5, color='black', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.5, color='black', zorder=301)
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black', zorder=301)
             
             # Shapefile
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='black', facecolor='none', linewidth=0.3)
+                                 edgecolor='black', facecolor='none', linewidth=0.6)
             
             # Plot SWD
             im = ax.imshow(swd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
@@ -751,14 +751,14 @@ def plot_cpd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
             # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.5, color='black', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.5, color='black', zorder=301)
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black', zorder=301)
             
             # Shapefile
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='black', facecolor='none', linewidth=0.3)
+                                 edgecolor='black', facecolor='none', linewidth=0.6)
             
             # Plot CPD
             im = ax.imshow(cpd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
