@@ -70,9 +70,10 @@ def get_colormap(canal, usar_noaa=False):
 
     
     # Definição por canal
-    canais_infravermelho = ['ch07', 'ch13','ch11', 'ch12' 'ch14', 'ch15', 'ch16']
-    canais_visiveis = ['ch01', 'ch02', 'ch03', 'ch04', 'ch05', 'ch06']
+    canais_infravermelho = ['ch07', 'ch13','ch11', 'ch12', 'ch14', 'ch15', 'ch16']
+    canais_visiveis = ['ch01', 'ch02']
     canais_vapor = ['ch08', 'ch09', 'ch10']
+    canais_nir = ['ch03', 'ch04', 'ch05', 'ch06']
     
     if canal in canais_infravermelho:
         if canal == 'ch13' and usar_noaa:
@@ -81,6 +82,8 @@ def get_colormap(canal, usar_noaa=False):
             return cmap_gray_r, -100, 55, "Brightness Temperature (C)"
     elif canal in canais_visiveis:
         return cmap_gray, 0, 100, "Reflectance (%)"
+    elif canal in canais_nir:
+        return cmap_gray,  0, 100, "Reflectance (%)"
     elif canal in canais_vapor:
         return cmap_water_vapor, -80, 0, "Brightness Temperature (C)"
     elif canal == 'swd':
@@ -301,9 +304,10 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
         return
     
     # Classificação dos canais
-    canais_visiveis = ['ch01', 'ch02', 'ch03', 'ch04', 'ch05', 'ch06']
+    canais_visiveis = ['ch01', 'ch02']
+    canais_nir = ['ch03', 'ch04', 'ch05', 'ch06']
     canais_vapor = ['ch08', 'ch09', 'ch10']
-    canais_ir = ['ch07', 'ch11', 'ch12' 'ch13', 'ch14', 'ch15', 'ch16']
+    canais_ir = ['ch07', 'ch11', 'ch12', 'ch13', 'ch14', 'ch15', 'ch16']
     
     # Configurações por tipo
     if canal in canais_visiveis:
@@ -316,8 +320,14 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
         tipo_canal = 'water_vapor'
         cmap_padrao = 'Greys'
         vmin, vmax = -80, 0
-        label = 'Temperatura (C)'
+        label = 'Brightness Temperature (C)'
         converte_celsius = True
+    elif canal in canais_nir:
+        tipo_canal = 'nir'
+        cmap_padrao = 'Greys_r'
+        vmin, vmax = 0, 100
+        label = 'Reflectancia (%)'
+        converte_celsius = False
     elif canal in canais_ir:
         tipo_canal = 'ir'
         cmap_padrao, vmin, vmax, label = get_colormap(canal, usar_noaa=usar_noaa_ch13)
@@ -325,7 +335,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
     else:
         tipo_canal = 'outro'
         cmap_padrao = 'Greys'
-        vmin, vmax = 0, 100
+        vmin, vmax = -100, 100
         label = 'Dados'
         converte_celsius = False
     
@@ -372,8 +382,8 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
                                  edgecolor='black', facecolor='none', linewidth=0.6)
             
             # Plot
-            ticks = np.arange(0, 101, 20) if tipo_canal == 'visivel' else np.arange(vmin, vmax+1, 20)
-            
+            ticks = np.arange(0, 101, 20) if tipo_canal in ['visivel', 'nir'] else np.arange(vmin, vmax+1, 20)
+
             dados.plot(ax=ax, cmap=cmap_uso, transform=ccrs.PlateCarree(),
                       vmin=vmin, vmax=vmax,
                       cbar_kwargs={"label": label, "orientation": "vertical",
@@ -393,7 +403,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             gl.ylabel_style = {'fontsize': 14}
             
             # Título
-            tipo_str = {'visivel': 'VIS', 'vapor': 'WV', 'ir': 'IR'}.get(tipo_canal, canal.upper())
+            tipo_str = {'visivel': 'VIS', 'vapor': 'WV', 'ir': 'IR', 'nir': 'NIR'}.get(tipo_canal, canal.upper())
             
             if titulo_personalizado:
                 titulo = f"{titulo_personalizado} | {sat.upper()} | {canal.upper()} ({tipo_str}) | {data_str} UTC"
