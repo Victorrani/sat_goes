@@ -81,6 +81,10 @@ def salvar_metadados(diretorio, sat, prod_select, canal=None, inicio_str=None,
             f.write(f"Canais: ch11, ch14 (Cloud Phase Difference)\n")
             f.write(f"Fórmula: CPD = ch11 - ch14\n")
             f.write(f"Aplicação: Detecção de fase de nuvens (gelo/água)\n")
+        elif prod_select == 'wvd':
+            f.write(f"Canais: ch08, ch13 (Water Vapor Difference)\n")
+            f.write(f"Fórmula: WVD = ch08 - ch13\n")
+            f.write(f"Aplicação: XXX\n")
         
         if info_extra:
             f.write("\nInformações adicionais:\n")
@@ -640,6 +644,133 @@ def baixar_cpd(sat, ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo,
     
     return resultados, timestamps_comuns
 
+##
+def baixar_wvd(sat, ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo, dir_fig):
+    """
+    Baixa os canais 8 e 13 para composição WVD (Water Vapor Difference)
+    GARANTE que os MESMOS timestamps sejam baixados em todos os canais
+    WVD = ch08 - ch13 (diferença para detecção de vapor d'água)
+    """
+    canais_wvd = ['ch08', 'ch13']
+    nome_canais = {
+        'ch08': 'WV 6.2µm - Canal de Vapor d\'Água (alta troposfera)',
+        'ch13': 'IR 10.3µm - Canal de Janela'
+    }
+    
+    print(f"\n{'='*60}")
+    print("💧 DOWNLOAD WVD (WATER VAPOR DIFFERENCE)")
+    print(f"{'='*60}")
+    print("Canais para WVD:")
+    for canal, nome in nome_canais.items():
+        print(f"   📍 {canal.upper()} - {nome}")
+    print(f"   📊 WVD = CH08 - CH13 (diferença para vapor d'água)")
+    print(f"   💡 Aplicação: Detecção de vapor d'água e umidade na alta troposfera")
+    print(f"{'='*60}\n")
+    
+    # Gerar timestamps
+    timestamps, dado_inicio, dado_fim = gerar_timestamps_true_color(
+        ano, mes, dia_inicio, hora_inicio, dia_fim, hora_fim, passo
+    )
+    
+    print(f"📅 Período: {dado_inicio} a {dado_fim} | Passo: {passo}min")
+    print(f"📊 Total de timestamps: {len(timestamps)}\n")
+    
+    # Verificar disponibilidade em cada canal
+    print("🔍 Verificando disponibilidade...")
+    timestamps_por_canal = {}
+    
+    for canal in canais_wvd:
+        url_canal = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/{canal}/{ano}/{mes}/'
+        dados_disponiveis, prefixo, sufixo = obter_dados_disponiveis(url_canal)
+        
+        timestamps_existentes = [ts for ts in timestamps if ts in dados_disponiveis]
+        timestamps_por_canal[canal] = {
+            'timestamps': timestamps_existentes,
+            'prefixo': prefixo,
+            'sufixo': sufixo,
+            'raiz_dado': url_canal,
+            'total': len(timestamps_existentes)
+        }
+        print(f"   {canal}: {len(timestamps_existentes)}/{len(timestamps)} disponíveis")
+    
+    # Encontrar timestamps comuns
+    timestamps_comuns = sorted(set(timestamps_por_canal['ch08']['timestamps']) &
+                                set(timestamps_por_canal['ch13']['timestamps']))
+    
+    print(f"\n✨ Timestamps comuns aos 2 canais: {len(timestamps_comuns)}")
+    
+    if not timestamps_comuns:
+        print("\n❌ ERRO: Nenhum timestamp comum encontrado!")
+        return None
+    
+    # Criar diretório base com nome do satélite
+    dir_base = os.path.join(dir_fig, f"{sat}_wvd_{ano}{mes}_{dia_inicio}_{dia_fim}")
+    os.makedirs(dir_base, exist_ok=True)
+    
+    # Salvar metadados
+    salvar_metadados(dir_base, sat, 'wvd', 
+                     inicio_str=dado_inicio, fim_str=dado_fim, 
+                     passo=passo, timestamps=timestamps_comuns)
+    
+    # Salvar timestamps comuns em arquivo separado
+    arquivo_timestamps = os.path.join(dir_base, "timestamps_comuns.txt")
+    with open(arquivo_timestamps, 'w') as f:
+        f.write("\n".join(timestamps_comuns))
+    
+    # Baixar arquivos
+    print("\n⬇️ INICIANDO DOWNLOAD...\n")
+    resultados = {}
+    
+    for canal in canais_wvd:
+        print(f"\n📡 Canal {canal.upper()}:")
+        dir_canal = os.path.join(dir_base, canal)
+        os.makedirs(dir_canal, exist_ok=True)
+        
+        info = timestamps_por_canal[canal]
+        baixados = 0
+        
+        for ts in timestamps_comuns:
+            arquivo_local = os.path.join(dir_canal, f"{info['prefixo']}{ts}{info['sufixo']}")
+            
+            if os.path.exists(arquivo_local):
+                print(f"   ⏭️  {ts} - já existe")
+                baixados += 1
+            else:
+                url = f"{info['raiz_dado']}{info['prefixo']}{ts}{info['sufixo']}"
+                try:
+                    print(f"   📥 {ts} - baixando...", end=" ")
+                    wget.download(url, arquivo_local, bar=None)
+                    print("✅")
+                    baixados += 1
+                except Exception as e:
+                    print(f"❌ Erro: {str(e)[:40]}")
+        
+        resultados[canal] = {'baixados': baixados, 'total': len(timestamps_comuns)}
+        print(f"   📊 Resumo: {baixados}/{len(timestamps_comuns)}")
+    
+    # Resumo final
+    print(f"\n{'='*60}")
+    print("📊 RESUMO WVD")
+    print(f"{'='*60}")
+    for canal, info in resultados.items():
+        status = "✅" if info['baixados'] == info['total'] else "⚠️"
+        print(f"{status} {canal}: {info['baixados']}/{info['total']}")
+    
+    print(f"\n📁 Pasta: {dir_base}")
+    print(f"📄 Metadados: {os.path.join(dir_base, 'metadados.txt')}")
+    
+    if all(info['baixados'] == info['total'] for info in resultados.values()):
+        print("\n🎉 WVD COMPLETO!")
+        print("📐 Fórmula: WVD = ch08 - ch13")
+        print("💡 Aplicação: Detecção de vapor d'água e umidade na alta troposfera")
+    else:
+        print("\n⚠️ WVD incompleto - alguns timestamps faltando")
+    
+    print(f"{'='*60}\n")
+    
+    return resultados, timestamps_comuns
+
+##
 # ============================================================================
 # FUNÇÕES AUXILIARES PARA VERIFICAÇÃO
 # ============================================================================
@@ -682,7 +813,7 @@ def select_prod(sat, prod_select):
     Função principal que orquestra todo o processo de download
     Parâmetros:
         sat: str - 'goes16' ou 'goes19'
-        prod_select: str - 'simple_chanel', 'true_color', 'swd' ou 'cpd'
+        prod_select: str - 'simple_chanel', 'true_color', 'swd' ou 'cpd', 'wvd'
     """
     print(f"\n{'='*50}")
     print(f"🚀 INICIANDO DOWNLOAD")
@@ -730,6 +861,17 @@ def select_prod(sat, prod_select):
         mes = selecionar_mes(meses)
         dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
         baixar_cpd(sat, ano, mes, dia_ini, hora_ini, dia_fim, hora_fim, passo, dir_fig)
+
+    # ===== WVD =====
+    elif prod_select == 'wvd':
+        url_temp = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/ch11/'
+        anos = obter_anos_disponiveis(url_temp)
+        ano = selecionar_ano(anos)
+        url_mes = f"{url_temp}{ano}/"
+        meses = obter_meses_disponiveis(url_mes)
+        mes = selecionar_mes(meses)
+        dia_ini, hora_ini, dia_fim, hora_fim, passo = obter_periodo()
+        baixar_wvd(sat, ano, mes, dia_ini, hora_ini, dia_fim, hora_fim, passo, dir_fig)
     
     # ===== SIMPLE CHANNEL =====
     elif prod_select == 'simple_chanel':
@@ -756,7 +898,7 @@ def select_prod(sat, prod_select):
     
     else:
         print(f"❌ Produto '{prod_select}' inválido!")
-        print("   Opções válidas: 'simple_chanel', 'true_color', 'swd', 'cpd'")
+        print("   Opções válidas: 'simple_chanel', 'true_color', 'swd', 'cpd', 'wvd'")
         return False
     
     print(f"\n{'='*50}")

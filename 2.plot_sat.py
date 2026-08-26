@@ -11,7 +11,8 @@ from produt_plot import (
     plot_prod,
     detectar_se_e_true_color,
     detectar_se_e_swd,
-    detectar_se_e_cpd,  # ADICIONADO
+    detectar_se_e_cpd,
+    detectar_se_e_wvd,  # ADICIONADO
     detectar_canais_disponiveis
 )
 import os
@@ -40,7 +41,8 @@ def main():
     canais = detectar_canais_disponiveis(caminho_caso)
     eh_true_color = detectar_se_e_true_color(caminho_caso)
     eh_swd = detectar_se_e_swd(caminho_caso)
-    eh_cpd = detectar_se_e_cpd(caminho_caso)  # ADICIONADO
+    eh_cpd = detectar_se_e_cpd(caminho_caso)
+    eh_wvd = detectar_se_e_wvd(caminho_caso)  # ADICIONADO
     
     print("\n" + "="*50)
     print("🔍 DETECTANDO PRODUTO")
@@ -84,6 +86,14 @@ def main():
         # PLOTA CPD AUTOMATICAMENTE
         produto = 'cpd'
         # cmap permanece None para usar o padrão
+    elif eh_wvd:
+        print("✅ Detectado: WVD (canais 08 e 13 disponíveis)")
+        print("   📐 Fórmula: WVD = ch08 - ch13")
+        print("   💡 Aplicação: Detecção de fase de nuvens (gelo/água)")
+        print("   🎨 Colormap: turbo (padrão)")
+        
+        # PLOTA WVD AUTOMATICAMENTE
+        produto = 'wvd'
     
     # ===== SIMPLE CHANNEL =====
     else:

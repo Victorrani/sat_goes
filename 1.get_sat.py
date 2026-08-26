@@ -26,16 +26,17 @@ def main():
 
     # Selecionar produto
     print('\nOpções de produtos:')
-    print('   📊 simple_chanel - Download de canal único')
-    print('   🎨 true_color    - Composição RGB (canais 1, 2, 3)')
-    print('   🌡️ swd           - Split Window Difference (canais 13, 15)')
-    print('   ☁️ cpd           - Cloud Phase Difference (canais 11, 14)')
+    print('    simple_chanel - Download de canal único')
+    print('    true_color    - Composição RGB (canais 1, 2, 3)')
+    print('    swd           - Split Window Difference (canais 13, 15)')
+    print('    cpd           - Cloud Phase Difference (canais 11, 14)')
+    print('    wvd           - Water Vapor Difference (canais 08, 13)')
     
     prod = input('\nEscolha o produto: ').lower()
     
-    if prod not in ['true_color', 'simple_chanel', 'swd', 'cpd']:
+    if prod not in ['true_color', 'simple_chanel', 'swd', 'cpd', 'wvd']:
         print('❌ Produto inválido!')
-        print('   Opções válidas: true_color, simple_chanel, swd, cpd')
+        print('   Opções válidas: true_color, simple_chanel, swd, cpd, wvd')
         return
     
     print(f'\n✅ Produto {prod.upper()} selecionado\n')

@@ -67,6 +67,7 @@ def get_colormap(canal, usar_noaa=False):
     # Colormap para diferenças (SWD e CPD)
     cmap_diff = 'Spectral'
     cmap_cpd = 'jet'
+    cmap_wvd = 'nipy_spectral'
 
     
     # Definição por canal
@@ -90,6 +91,8 @@ def get_colormap(canal, usar_noaa=False):
         return cmap_diff, -6, 6, "SWD (K)"
     elif canal == 'cpd':
         return cmap_cpd, -4, 12, "CPD (K)"
+    elif canal == 'wvd':
+        return cmap_wvd, -2.5, 2.5, "WVD (K)" 
     else:
         return cmap_gray_r, -40, 80, "Brightness Temperature (C)"
 
@@ -175,6 +178,13 @@ def detectar_se_e_cpd(caminho_caso):
     canais = detectar_canais_disponiveis(caminho_caso)
     return 'ch11' in canais and 'ch14' in canais
 
+def detectar_se_e_wvd(caminho_caso):
+    """
+    Detecta se o caso é WVD (Water vapor difference)
+    """
+    canais = detectar_canais_disponiveis(caminho_caso)
+    return 'ch08' in canais and 'ch13' in canais
+
 # ============================================================================
 # FUNÇÕES DE INTERAÇÃO COM USUÁRIO
 # ============================================================================
@@ -199,6 +209,7 @@ def listar_casos_disponiveis():
             is_tc = detectar_se_e_true_color(caminho_caso)
             is_swd = detectar_se_e_swd(caminho_caso)
             is_cpd = detectar_se_e_cpd(caminho_caso)
+            is_wvd = detectar_se_e_wvd(caminho_caso)
             
             if is_tc:
                 tipo = "True Color"
@@ -206,6 +217,8 @@ def listar_casos_disponiveis():
                 tipo = "SWD"
             elif is_cpd:
                 tipo = "CPD"
+            elif is_wvd:
+                tipo = "WVD"
             else:
                 tipo = "Canal(ais) individual(is)"
             
@@ -685,6 +698,133 @@ def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
     
     print(f"Plotagem SWD concluida!")
 
+def plot_wvd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
+    """
+    Plota composição WVD (Water Vapor Difference) usando canais 8 e 13
+    WVD = ch08 - ch13
+    Aplicação: Detecção de vapor d'água e umidade na alta troposfera
+    """
+    caminho_caso = os.path.join(DIRFIG, caso)
+    caminho_fig = os.path.join(caminho_caso, 'fig')
+    os.makedirs(caminho_fig, exist_ok=True)
+    
+    ch08_path = os.path.join(caminho_caso, 'ch08')
+    ch13_path = os.path.join(caminho_caso, 'ch13')
+    
+    if not all(os.path.exists(p) for p in [ch08_path, ch13_path]):
+        print(f"ERRO: Canais 8 e 13 nao encontrados em {caminho_caso}")
+        return
+    
+    ch08_files = sorted([f for f in os.listdir(ch08_path) if f.endswith('.nc')])
+    ch13_files = sorted([f for f in os.listdir(ch13_path) if f.endswith('.nc')])
+    
+    if not ch08_files or not ch13_files:
+        print(f"ERRO: Nenhum arquivo encontrado nos canais")
+        return
+    
+    # Encontrar timestamps comuns
+    timestamps_ch08 = [f.split('_')[1][:12] for f in ch08_files]
+    timestamps_ch13 = [f.split('_')[1][:12] for f in ch13_files]
+    timestamps_comuns = sorted(set(timestamps_ch08) & set(timestamps_ch13))
+    
+    if not timestamps_comuns:
+        print("ERRO: Nenhum timestamp comum entre ch08 e ch13!")
+        return
+    
+    print(f"\nPlotando {len(timestamps_comuns)} imagens WVD...")
+    print(f"Satelite: {sat.upper()}")
+    print(f"Formula: WVD = ch08 - ch13")
+    print(f"Aplicação: Detecção de vapor d'água e umidade na alta troposfera")
+    
+    # Colormap para WVD
+    cmap_uso, vmin, vmax, label = get_colormap('wvd')
+    
+    # Ticks
+    ticks = np.arange(vmin, vmax + 0.5, 0.5)
+    
+    for i, ts in enumerate(timestamps_comuns, 1):
+        try:
+            # Encontrar arquivos correspondentes
+            ch08_file = [f for f in ch08_files if ts in f][0]
+            ch13_file = [f for f in ch13_files if ts in f][0]
+            
+            print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
+            
+            # Abrir dados
+            arq08 = xr.open_dataset(os.path.join(ch08_path, ch08_file), engine='netcdf4')
+            arq13 = xr.open_dataset(os.path.join(ch13_path, ch13_file), engine='netcdf4')
+            
+            # Extrair dados (Brightness Temperature em °C)
+            dados08 = arq08.Band1.data / 100 - 273.15
+            dados13 = arq13.Band1.data / 100 - 273.15
+            
+            # Calcular WVD
+            wvd = dados08 - dados13
+            
+            # Filtrar valores extremos
+            wvd = np.where(np.abs(wvd) > 50, np.nan, wvd)
+            
+            # Obter coordenadas
+            lats = arq08.lat.data
+            lons = arq08.lon.data
+            
+            # Criar figura
+            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
+            
+            # Features
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='lightblue', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='lightblue', zorder=301)
+            
+            # Shapefile
+            if os.path.exists(SHAPEFILE_PATH):
+                shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
+                ax.add_geometries(shapefile, ccrs.PlateCarree(),
+                                 edgecolor='black', facecolor='none', linewidth=0.6)
+            
+            # Plot WVD
+            im = ax.imshow(wvd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+                          transform=ccrs.PlateCarree(), cmap=cmap_uso, 
+                          vmin=vmin, vmax=vmax, origin='lower')
+            
+            cbar = plt.colorbar(im, ax=ax, orientation='vertical', 
+                               pad=0.05, aspect=20, shrink=0.8, ticks=ticks, extend='both')
+                               #extend='both', ticks=ticks)
+            cbar.set_label(label, fontsize=12)
+            cbar.ax.tick_params(labelsize=10)
+            
+            # Extent
+            if extent:
+                ax.set_extent(extent, crs=ccrs.PlateCarree())
+            else:
+                ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
+            
+            # Gridlines
+            gl = ax.gridlines(draw_labels=True)
+            gl.top_labels = False
+            gl.right_labels = False
+            gl.xlabel_style = {'fontsize': 14}
+            gl.ylabel_style = {'fontsize': 14}
+            
+            # Título
+            if titulo_personalizado:
+                titulo = f"{titulo_personalizado} | {sat.upper()} | WVD | {ts} UTC"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_wvd_{ts}.png"
+            else:
+                titulo = f"{sat.upper()} | Water Vapor Difference (WVD) | {ts} UTC"
+                nome_arquivo = f"{sat.upper()}_wvd_{ts}.png"
+            
+            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
+            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            
+            arq08.close()
+            arq13.close()
+            
+        except Exception as e:
+            print(f"   ERRO ao processar {ts}: {e}")
+    
+    print(f"Plotagem WVD concluida!")
+
 # ============================================================================
 # FUNÇÃO DE PLOTAGEM CPD (NOVA)
 # ============================================================================
@@ -825,7 +965,7 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
     
     Parâmetros:
         caso: str - nome do caso
-        produto: str - 'true_color', 'simple_channel', 'swd' ou 'cpd'
+        produto: str - 'true_color', 'simple_channel', 'swd' ou 'cpd', 'wvd'
         extent: list - [lon_min, lon_max, lat_min, lat_max]
         titulo: str - título personalizado
         cmap: str - colormap personalizado (apenas para simple_channel)
@@ -874,7 +1014,13 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
         print("CPD = ch11 - ch14")
         print("Aplicação: Detecção de fase de nuvens (gelo/água)")
         plot_cpd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
-        
+
+    elif produto == 'wvd':
+        print("\nPlotando Water Vapor Difference (WVD)...")
+        print("CPD = ch08 - ch13")
+        print("Aplicação: Detecção de fase de nuvens (gelo/água)")
+        plot_wvd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
+
     elif produto == 'simple_channel':
         print("\nPlotando canal individual...")
         
