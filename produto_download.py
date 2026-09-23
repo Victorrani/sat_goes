@@ -112,6 +112,15 @@ def obter_canais_disponiveis(sat):
               if link.get('href').startswith('ch')]
     return canais, url_base
 
+def obter_anos_disponiveis(url_canal):
+    """Obtém a lista de anos com dados disponíveis no servidor para um canal"""
+    response = requests.get(url_canal)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    anos = [link.get('href')[:-1] for link in soup.find_all('a')
+            if link.get('href').startswith('2')]
+    return sorted(anos)
+
 def obter_dados_disponiveis(raiz_dado):
     """Obtém lista de dados disponíveis no servidor para uma pasta canal/ano/mês"""
     response = requests.get(raiz_dado)
@@ -142,7 +151,19 @@ def selecionar_canal(canais):
     canal = input('Insira o canal que deseja fazer o Download: ')
     return canal
 
-def obter_periodo():
+def mostrar_anos_disponiveis(sat, canal):
+    """Mostra, apenas para referência, os anos com dados disponíveis no servidor para o canal"""
+    url_canal = f'https://ftp1.cptec.inpe.br/goes/{sat}/retangular/{canal}/'
+    try:
+        anos = obter_anos_disponiveis(url_canal)
+        if anos:
+            print(f"📅 Anos disponíveis no servidor para {canal}: {', '.join(anos)}")
+        else:
+            print(f"⚠️ Não foi possível listar os anos disponíveis para {canal}.")
+    except Exception:
+        print(f"⚠️ Não foi possível consultar os anos disponíveis para {canal} (prossiga normalmente).")
+
+def obter_periodo(sat, canal):
     """
     Solicita ao usuário o período de download informando data e hora completas
     (início e fim). Como as duas datas carregam ano/mês/dia próprios, o período
@@ -151,14 +172,14 @@ def obter_periodo():
     print('\n' + '='*50)
     print('DEFINIÇÃO DO PERÍODO DE DOWNLOAD')
     print('='*50)
-    print('Formato: AAAAMMDDHH (ano, mês, dia e hora)')
-    print('Exemplo: 2025013122  =  31/01/2025 às 22h')
-    print('(O período pode cruzar meses e anos sem problema)\n')
+    mostrar_anos_disponiveis(sat, canal)
+    print('Formato: YYYYMMDDHH (ano, mês, dia e hora)')
+    print('Exemplo: 2025013122  =  31/01/2025 às 22h\n')
 
     while True:
         try:
-            dt_inicio = datetime.strptime(input('Data/hora de início (AAAAMMDDHH): ').strip(), '%Y%m%d%H')
-            dt_fim = datetime.strptime(input('Data/hora de fim (AAAAMMDDHH): ').strip(), '%Y%m%d%H')
+            dt_inicio = datetime.strptime(input('Data/hora de início (YYYYMMDDHH): ').strip(), '%Y%m%d%H')
+            dt_fim = datetime.strptime(input('Data/hora de fim (YYYYMMDDHH): ').strip(), '%Y%m%d%H')
 
             if dt_fim < dt_inicio:
                 print('\n❌ A data de fim deve ser igual ou posterior à data de início. Tente novamente.\n')
@@ -171,14 +192,14 @@ def obter_periodo():
 
             return dt_inicio, dt_fim, passo
         except ValueError:
-            print('\n❌ Data/hora ou passo em formato inválido! Use AAAAMMDDHH (ex: 2025013122). Tente novamente.\n')
+            print('\n❌ Data/hora ou passo em formato inválido! Use YYYYMMDDHH (ex: 2025013122). Tente novamente.\n')
 
 # ============================================================================
 # TIMESTAMPS E AGRUPAMENTO POR MÊS
 # ============================================================================
 
 def gerar_timestamps(dt_inicio, dt_fim, passo):
-    """Gera a lista de timestamps (AAAAMMDDHHMM) entre duas datas, podendo cruzar meses/anos"""
+    """Gera a lista de timestamps (YYYYMMDDHHMM) entre duas datas, podendo cruzar meses/anos"""
     timestamps = []
     atual = dt_inicio
     while atual <= dt_fim:
@@ -448,15 +469,15 @@ def select_prod(sat, prod_select):
     # Criar diretório base
     dir_fig = criar_diretorios_base()
 
-    # Período do download (uma única vez, vale para qualquer produto)
-    dt_inicio, dt_fim, passo = obter_periodo()
-
     if prod_select in PRODUTOS_COMPOSTOS:
+        canal_referencia = PRODUTOS_COMPOSTOS[prod_select]['canais'][0]
+        dt_inicio, dt_fim, passo = obter_periodo(sat, canal_referencia)
         baixar_composicao(sat, prod_select, dt_inicio, dt_fim, passo, dir_fig)
 
     elif prod_select == 'simple_chanel':
         canais, _ = obter_canais_disponiveis(sat)
         canal = selecionar_canal(canais)
+        dt_inicio, dt_fim, passo = obter_periodo(sat, canal)
         baixar_canal_simples(sat, canal, dt_inicio, dt_fim, passo, dir_fig)
 
     else:
