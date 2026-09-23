@@ -9,11 +9,8 @@ from produto_plot import (
     obter_titulo_usuario,
     obter_colormap_usuario,
     plot_prod,
-    detectar_se_e_true_color,
-    detectar_se_e_swd,
-    detectar_se_e_cpd,
-    detectar_se_e_wvd,  # ADICIONADO
-    detectar_canais_disponiveis
+    detectar_produtos_disponiveis,
+    detectar_canais_disponiveis,
 )
 import os
 
@@ -26,103 +23,67 @@ def main():
 
     # 1. Listar casos disponíveis
     casos = listar_casos_disponiveis()
-    
+
     if not casos:
         print("\n❌ Nenhum caso encontrado! Execute o download primeiro.")
         return
-    
+
     # 2. Selecionar caso
     caso = selecionar_caso(casos)
     if not caso:
         return
-    
-    # 3. Verificar produto disponível
+
+    # 3. Detectar todos os produtos possíveis para este caso (uma pasta pode
+    # satisfazer vários ao mesmo tempo, ex: um caso com os 16 canais baixados)
     caminho_caso = os.path.join('fig_dados', caso)
     canais = detectar_canais_disponiveis(caminho_caso)
-    eh_true_color = detectar_se_e_true_color(caminho_caso)
-    eh_swd = detectar_se_e_swd(caminho_caso)
-    eh_cpd = detectar_se_e_cpd(caminho_caso)
-    eh_wvd = detectar_se_e_wvd(caminho_caso)  # ADICIONADO
-    
+    produtos_disponiveis = detectar_produtos_disponiveis(caminho_caso)
+
     print("\n" + "="*50)
-    print("🔍 DETECTANDO PRODUTO")
+    print("🔍 PRODUTOS DISPONÍVEIS PARA ESTE CASO")
     print("="*50)
-    
-    cmap = None
-    produto = None
-    
-    # ===== TRUE COLOR =====
-    if eh_true_color:
-        print("✅ Detectado: TRUE COLOR (canais 01, 02, 03 disponíveis)")
-        print("\nOpções disponíveis:")
-        print("   1. Plotar True Color")
-        print("   2. Plotar canal individual")
-        opcao = input("\nEscolha (1/2): ").strip()
-        
-        if opcao == '1':
-            produto = 'true_color'
-        else:
-            produto = 'simple_channel'
-            cmap = obter_colormap_usuario()
-    
-    # ===== SWD =====
-    elif eh_swd:
-        print("✅ Detectado: SWD (canais 13 e 15 disponíveis)")
-        print("   📐 Fórmula: SWD = ch13 - ch15")
-        print("   💡 Aplicação: Detecção de nuvens baixas, fogo e neblina")
-        print("   🎨 Colormap: seismic_r (padrão)")
-        
-        # PLOTA SWD AUTOMATICAMENTE
-        produto = 'swd'
-        # cmap permanece None para usar o padrão
-    
-    # ===== CPD =====
-    elif eh_cpd:
-        print("✅ Detectado: CPD (canais 11 e 14 disponíveis)")
-        print("   📐 Fórmula: CPD = ch11 - ch14")
-        print("   💡 Aplicação: Detecção de fase de nuvens (gelo/água)")
-        print("   🎨 Colormap: seismic_r (padrão)")
-        
-        # PLOTA CPD AUTOMATICAMENTE
-        produto = 'cpd'
-        # cmap permanece None para usar o padrão
-    elif eh_wvd:
-        print("✅ Detectado: WVD (canais 08 e 13 disponíveis)")
-        print("   📐 Fórmula: WVD = ch08 - ch13")
-        print("   💡 Aplicação: Detecção de fase de nuvens (gelo/água)")
-        print("   🎨 Colormap: turbo (padrão)")
-        
-        # PLOTA WVD AUTOMATICAMENTE
-        produto = 'wvd'
-    
-    # ===== SIMPLE CHANNEL =====
-    else:
-        print("✅ Detectado: SIMPLE CHANNEL (canal único)")
-        produto = 'simple_channel'
-        cmap = obter_colormap_usuario()
-    
+
+    opcoes = list(produtos_disponiveis)
+    if canais:
+        opcoes.append('Single_Band')
+
+    if not opcoes:
+        print("❌ Nenhum canal encontrado neste caso!")
+        return
+
+    for i, p in enumerate(opcoes, 1):
+        print(f"   {i}. {p}")
+
+    escolha = input("\nEscolha o produto (número): ").strip()
+    try:
+        produto = opcoes[int(escolha) - 1]
+    except (ValueError, IndexError):
+        print(f"❌ Opção inválida! Escolha entre 1 e {len(opcoes)}.")
+        return
+
+    print(f"\n✅ Produto selecionado: {produto}")
+
+    cmap = obter_colormap_usuario() if produto == 'Single_Band' else None
+
     # 4. Configurar extent
     print("\n" + "="*50)
     print("🌍 CONFIGURAÇÃO DA ÁREA")
     print("="*50)
     opcao_extent = input("Deseja definir área personalizada? (s/n): ").strip().lower()
     extent = obter_extent_usuario() if opcao_extent == 's' else None
-    
+
     # 5. Configurar título
     print("\n" + "="*50)
     print("📝 CONFIGURAÇÃO DO TÍTULO")
     print("="*50)
     opcao_titulo = input("Deseja título personalizado? (s/n): ").strip().lower()
     titulo = obter_titulo_usuario() if opcao_titulo == 's' else None
-    
+
     # 6. Executar plotagem
-    if produto:
-        print("\n" + "="*50)
-        print(f"🚀 INICIANDO PLOTAGEM: {produto.upper()}")
-        print("="*50)
-        plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap)
-    else:
-        print("❌ Nenhum produto selecionado!")
+    print("\n" + "="*50)
+    print(f"🚀 INICIANDO PLOTAGEM: {produto.upper()}")
+    print("="*50)
+    plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap)
 
 if __name__ == "__main__":
     main()

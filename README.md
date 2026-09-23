@@ -7,19 +7,34 @@
 
 ---
 Funcionalidades
-Download de canais individuais (ch01 a ch16);
 
-Download de True Color (composição RGB - canais 1, 2 e 3);
+Download de canais individuais - Single_Band (ch01 a ch16);
 
-Download de SWD (Split Window Difference - canais 13 e 15);
+Download de True_Color (composição RGB - canais 1, 2 e 3);
 
-Download de CPD (Cloud Phase Difference - canais 11 e 14);
+Download de AirMass RGB (canais 8, 10, 12 e 13 - faixas oficiais NASA SPoRT);
 
-Plotagem automática com shapefile do Brasil;
+Download de SWD - Split Window Difference (canais 13 e 15);
+
+Download de CPD - Cloud Phase Difference (canais 11 e 14, fórmula CH14-CH11 conforme guia oficial CIMSS);
+
+Download de WVD - Water Vapor - IR Difference (canais 8 e 13), plotado como destaque de overshooting top (fundo IR + máscara acima de um limiar em K, baseado no ATBD oficial);
+
+Download de SOD - Split Ozone Difference (canais 12 e 13);
+
+Download de SWVD - Split Water Vapor Difference (canais 8 e 10, faixa oficial -26,2 a 0,9K);
+
+Período de download aceita datas completas (AAAAMMDDHH) e cruza meses/anos sem problema;
+
+Detecção automática de todos os produtos disponíveis num caso já baixado (uma pasta pode conter canais de vários produtos ao mesmo tempo);
+
+Plotagem automática com shapefile do Brasil e linhas de contorno com cor ajustada por produto (dourado ou preto, conforme o que for mais visível no fundo de cada um);
+
+Título das figuras em duas linhas (data/hora em cima, identificação embaixo);
 
 Paleta de cores customizável;
 
-Domínio focado na América do Sul e Central;
+Domínio focado na América do Sul e Central, com suporte a área personalizada (extent);
 
 Integração com dados de precipitação (MERGE e IMERG – em desenvolvimento).
 ---
@@ -57,6 +72,7 @@ python 2.plot_sat.py
 ├── fig_dados
 ├── produto_download.py
 ├── produto_plot.py
+├── produtos_abi
 ├── README.md
 ├── requirements.txt
 ├── scripts
@@ -68,18 +84,26 @@ python 2.plot_sat.py
 ```
 O que funciona 100%:
 
-Download e plotagem True Color para GOES-16 e GOES-19;
+Download e plotagem de canais individuais - Single_Band (ch01 a ch16) para GOES-16 e GOES-19;
+
+Download e plotagem True_Color para GOES-16 e GOES-19;
+
+Download e plotagem AirMass RGB para GOES-16 e GOES-19;
 
 Download e plotagem SWD (Split Window Difference) para GOES-16 e GOES-19;
 
 Download e plotagem CPD (Cloud Phase Difference) para GOES-16 e GOES-19;
 
-Download e plotagem de canais individuais (ch01 a ch16) para GOES-16 e GOES-19;
+Download e plotagem WVD (Water Vapor - IR Difference / destaque de overshooting top) para GOES-16 e GOES-19;
 
-Download de dados de precipitação MERGE e IMERG;
+Download e plotagem SOD (Split Ozone Difference) para GOES-16 e GOES-19;
+
+Download e plotagem SWVD (Split Water Vapor Difference) para GOES-16 e GOES-19;
+
 __________________________________________________________________
 
 🚀 Próximos passos:
+
 -> IMERG: imagens de acumulado de chuva e GIFs animados
 
 -> MERGE: imagens de acumulado de chuva e GIFs animados
@@ -88,36 +112,45 @@ __________________________________________________________________
 
 -> Novos satélites: expansão para outros sensores e plataformas
 
--> Script exclusivo para GIFs: automatizar animações temporais
-
 -> Integração futura: módulo de satélite + reanálise ERA5 ou previsões GFS (plot_model.py)
-
--> Melhoria na padronização e descrição dos produtos
 
 -> SatView (fase 2) - Mudança de ambiente e programação mais avançada 
 
 📸 Exemplos de plotagem
-Furacão Melissa (GOES-19 True Color)
-![Furacão Melissa - GOES-19 - True Color](/docs/Melissa_Hurricane_GOES19_202510281500.png/)
+Furacão Melissa (GOES-19, 2025-10-28 16h UTC)
 
-Ciclone Melissa (GOES-16 ch13)
-![Furacão Melissa - GOES-19 - ch13](/docs/Melissa_Hurricane_GOES19_ch13_202510281500.png)
+True_Color
+![Furacão Melissa - GOES-19 - True Color](/docs/MELISSA_GOES19_202510281600.png)
 
-Exemplo CPD (Cloud Phase Difference)
-![Furacão Melissa - GOES-19 - CPD ](/docs/Melissa_Hurricane_GOES19_cpd_202510281500.png)
+AirMass RGB
+![Furacão Melissa - GOES-19 - AirMass](/docs/MELISSA_GOES19_airmass_202510281600.png)
 
-Exemplo SWD (Split Window Difference) 
-![Furacão Melissa - GOES19 - SWD](/docs/Melissa_Hurricane_GOES19_swd_202510281500.png)
+SWD (Split Window Difference)
+![Furacão Melissa - GOES-19 - SWD](/docs/MELISSA_GOES19_swd_202510281600.png)
+
+CPD (Cloud Phase Difference)
+![Furacão Melissa - GOES-19 - CPD](/docs/MELISSA_GOES19_cpd_202510281600.png)
+
+WVD (Water Vapor - IR Difference / destaque de overshooting top)
+![Furacão Melissa - GOES-19 - WVD](/docs/MELISSA_GOES19_wvd_202510281600.png)
+
+SOD (Split Ozone Difference)
+![Furacão Melissa - GOES-19 - SOD](/docs/MELISSA_GOES19_sod_202510281600.png)
+
+SWVD (Split Water Vapor Difference)
+![Furacão Melissa - GOES-19 - SWVD](/docs/MELISSA_GOES19_swvd_202510281600.png)
 
 
 
 👥 Autoria
-Victor Ranieri – Desenvolvimento, lógica e implementação
+Victor Ranieri – Desenvolvimento inicial, lógica inicial e implementação inicial
 
-DeepSeek – Organização do código e documentação
+Claude ia – Organização do código, lógica avançada e documentação
+
+DeepSeek ia - Organização do código, lógica avançada e documentação
 
 📅 Última atualização
-2026/07/22
+2026/09/23
 
 Ajude a encontrar/criar paletas de cores para as imagens.
 

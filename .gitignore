@@ -5,6 +5,11 @@ fig_dados/
 *.jpg
 *.jpeg
 
+# Exceção: imagens de exemplo do README, que devem ser versionadas
+!docs/*.png
+!docs/*.jpg
+!docs/*.jpeg
+
 # Metadados
 *_comuns.txt
 metadados.txt

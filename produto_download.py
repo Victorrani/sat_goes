@@ -5,6 +5,7 @@ Descrição: Funções para download de canais individuais e composições True 
 """
 
 import os
+import time
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -58,23 +59,20 @@ def salvar_metadados(diretorio, sat, prod_select, canal=None, inicio_str=None,
         f.write(f"Produto: {prod_select}\n")
         f.write(f"Data do download: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
-        if prod_select == 'simple_chanel':
+        if prod_select == 'Single_Band':
             f.write(f"Canal: {canal}\n")
-        elif prod_select == 'true_color':
+        elif prod_select == 'True_Color':
             f.write(f"Canais: ch01, ch02, ch03 (True Color - RGB)\n")
             f.write(f"Composição: Vermelho (0.64µm), Verde (0.86µm), Azul (0.47µm)\n")
-        elif prod_select == 'swd':
-            f.write(f"Canais: ch13, ch15 (Split Window Difference)\n")
-            f.write(f"Fórmula: SWD = ch13 - ch15\n")
-            f.write(f"Aplicações: Detecção de nuvens baixas, fogo e neblina\n")
-        elif prod_select == 'cpd':
-            f.write(f"Canais: ch11, ch14 (Cloud Phase Difference)\n")
-            f.write(f"Fórmula: CPD = ch11 - ch14\n")
-            f.write(f"Aplicação: Detecção de fase de nuvens (gelo/água)\n")
-        elif prod_select == 'wvd':
-            f.write(f"Canais: ch08, ch13 (Water Vapor Difference)\n")
-            f.write(f"Fórmula: WVD = ch08 - ch13\n")
-            f.write(f"Aplicação: XXX\n")
+        elif prod_select in PRODUTOS_COMPOSTOS:
+            # SWD, CPD, WVD, Ozone, SWVD - metadados derivados de PRODUTOS_COMPOSTOS
+            # (fonte única, evita descrições desatualizadas ou incompletas)
+            info = PRODUTOS_COMPOSTOS[prod_select]
+            f.write(f"Canais: {', '.join(info['canais'])} ({info['titulo']})\n")
+            if 'formula' in info:
+                f.write(f"Fórmula: {info['formula']}\n")
+            if 'aplicacao' in info:
+                f.write(f"Aplicação: {info['aplicacao']}\n")
 
         if info_extra:
             f.write("\nInformações adicionais:\n")
@@ -121,9 +119,25 @@ def obter_anos_disponiveis(url_canal):
             if link.get('href').startswith('2')]
     return sorted(anos)
 
-def obter_dados_disponiveis(raiz_dado):
-    """Obtém lista de dados disponíveis no servidor para uma pasta canal/ano/mês"""
-    response = requests.get(raiz_dado)
+def obter_dados_disponiveis(raiz_dado, tentativas=3, espera=5):
+    """
+    Obtém lista de dados disponíveis no servidor para uma pasta canal/ano/mês.
+    Tenta novamente em caso de falha de conexão (rede instável, DNS, timeout).
+    """
+    response = None
+    for tentativa in range(1, tentativas + 1):
+        try:
+            response = requests.get(raiz_dado, timeout=15)
+            break
+        except requests.exceptions.RequestException as e:
+            if tentativa < tentativas:
+                print(f"   ⚠️ Falha ao consultar o servidor (tentativa {tentativa}/{tentativas}): "
+                      f"{type(e).__name__}. Tentando novamente em {espera}s...")
+                time.sleep(espera)
+            else:
+                print(f"   ❌ Não foi possível consultar {raiz_dado} após {tentativas} tentativas.")
+                return [], None, None
+
     soup = BeautifulSoup(response.text, 'html.parser')
 
     dados_disponiveis = []
@@ -292,7 +306,7 @@ def baixar_canal(sat, canal, timestamps, dir_canal):
 # ============================================================================
 
 PRODUTOS_COMPOSTOS = {
-    'true_color': {
+    'True_Color': {
         'canais': ['ch01', 'ch02', 'ch03'],
         'nome_canais': {
             'ch01': 'Vermelho (0.64µm)',
@@ -302,7 +316,20 @@ PRODUTOS_COMPOSTOS = {
         'titulo': 'TRUE COLOR',
         'emoji': '🎨',
     },
-    'swd': {
+    'AirMass': {
+        'canais': ['ch08', 'ch10', 'ch12', 'ch13'],
+        'nome_canais': {
+            'ch08': "WV 6.2µm - Vapor d'Água de Alto Nível",
+            'ch10': "WV 7.3µm - Vapor d'Água de Baixo Nível",
+            'ch12': 'IR 9.6µm - Canal de Ozônio',
+            'ch13': 'IR 10.3µm - Canal de Janela Limpa',
+        },
+        'titulo': 'AIRMASS RGB',
+        'formula': 'Red=CH08-CH10 (-26.2/0.6C) | Green=CH12-CH13 (-43.2/6.7C) | Blue=CH08 invertido (-29.25/-64.65C)',
+        'aplicacao': 'Monitoramento de ciclogênese, jatos e anomalias de vorticidade potencial (PV) - fonte: QuickGuide_GOESR_AirMassRGB_final.pdf (NASA SPoRT)',
+        'emoji': '🌪️',
+    },
+    'SWD': {
         'canais': ['ch13', 'ch15'],
         'nome_canais': {
             'ch13': 'IR 10.3µm - Canal Clean Window',
@@ -313,18 +340,18 @@ PRODUTOS_COMPOSTOS = {
         'aplicacao': 'Detecção de nuvens baixas, fogo e neblina',
         'emoji': '🌡️',
     },
-    'cpd': {
+    'CPD': {
         'canais': ['ch11', 'ch14'],
         'nome_canais': {
             'ch11': 'IR 8.5µm - Canal de Absorção de Gelo',
             'ch14': 'IR 11.2µm - Canal de Janela',
         },
         'titulo': 'CPD (CLOUD PHASE DIFFERENCE)',
-        'formula': 'CPD = CH11 - CH14',
+        'formula': 'CPD = CH14 - CH11',
         'aplicacao': 'Detecção de fase de nuvens (gelo/água)',
         'emoji': '☁️',
     },
-    'wvd': {
+    'WVD': {
         'canais': ['ch08', 'ch13'],
         'nome_canais': {
             'ch08': "WV 6.2µm - Canal de Vapor d'Água (alta troposfera)",
@@ -335,11 +362,45 @@ PRODUTOS_COMPOSTOS = {
         'aplicacao': "Detecção de vapor d'água e umidade na alta troposfera",
         'emoji': '💧',
     },
+    'SOD': {
+        'canais': ['ch12', 'ch13'],
+        'nome_canais': {
+            'ch12': 'IR 9.6µm - Canal de Ozônio',
+            'ch13': 'IR 10.3µm - Canal de Janela Limpa',
+        },
+        'titulo': 'SPLIT OZONE DIFFERENCE',
+        'formula': 'SOD = CH12 - CH13',
+        'aplicacao': 'Influência do ozônio estratosférico; componente verde do Airmass RGB',
+        'emoji': '🌀',
+    },
+    'SWVD': {
+        'canais': ['ch08', 'ch10'],
+        'nome_canais': {
+            'ch08': "WV 6.2µm - Vapor d'Água de Alto Nível",
+            'ch10': "WV 7.3µm - Vapor d'Água de Baixo Nível",
+        },
+        'titulo': 'SPLIT WATER VAPOR DIFFERENCE (SWVD)',
+        'formula': 'SWVD = CH08 - CH10',
+        'aplicacao': "Detecção de cirros finos e umidade em níveis médios/altos; componente vermelho do Airmass RGB",
+        'emoji': '💦',
+    },
 }
+
+# Nomes canônicos dos produtos aceitos pelo sistema (Single_Band + as chaves de PRODUTOS_COMPOSTOS)
+PRODUTOS_VALIDOS = ['Single_Band'] + list(PRODUTOS_COMPOSTOS.keys())
+
+def normalizar_produto(prod_input):
+    """
+    Aceita o nome do produto digitado em qualquer capitalização (ex: 'true_color',
+    'TRUE_COLOR', 'True_color') e devolve a forma canônica (ex: 'True_Color').
+    Retorna None se o produto não existir.
+    """
+    mapa = {p.lower(): p for p in PRODUTOS_VALIDOS}
+    return mapa.get(str(prod_input).strip().lower())
 
 def baixar_composicao(sat, prod_select, dt_inicio, dt_fim, passo, dir_fig):
     """
-    Baixa os canais necessários para um produto composto (true_color, swd, cpd ou wvd),
+    Baixa os canais necessários para um produto composto (True_Color, SWD, CPD ou WVD),
     garantindo que os MESMOS timestamps sejam baixados em todos os canais.
     Suporta períodos que cruzam meses e/ou anos.
     """
@@ -435,7 +496,7 @@ def baixar_canal_simples(sat, canal, dt_inicio, dt_fim, passo, dir_fig):
     dir_canal = os.path.join(dir_data, canal)
     os.makedirs(dir_canal, exist_ok=True)
 
-    salvar_metadados(dir_data, sat, 'simple_chanel', canal=canal,
+    salvar_metadados(dir_data, sat, 'Single_Band', canal=canal,
                      inicio_str=dt_inicio.strftime('%Y%m%d%H%M'), fim_str=dt_fim.strftime('%Y%m%d%H%M'),
                      passo=passo, timestamps=timestamps)
 
@@ -453,8 +514,15 @@ def select_prod(sat, prod_select):
     Função principal que orquestra todo o processo de download
     Parâmetros:
         sat: str - 'goes16' ou 'goes19'
-        prod_select: str - 'simple_chanel', 'true_color', 'swd', 'cpd' ou 'wvd'
+        prod_select: str - 'Single_Band', 'True_Color', 'SWD', 'CPD' ou 'WVD'
+                     (aceito em qualquer capitalização, é normalizado internamente)
     """
+    prod_select = normalizar_produto(prod_select)
+    if prod_select is None:
+        print(f"❌ Produto inválido!")
+        print(f"   Opções válidas: {', '.join(PRODUTOS_VALIDOS)}")
+        return False
+
     print(f"\n{'='*50}")
     print(f"🚀 INICIANDO DOWNLOAD")
     print(f"📡 Satélite: {sat.upper()}")
@@ -474,16 +542,11 @@ def select_prod(sat, prod_select):
         dt_inicio, dt_fim, passo = obter_periodo(sat, canal_referencia)
         baixar_composicao(sat, prod_select, dt_inicio, dt_fim, passo, dir_fig)
 
-    elif prod_select == 'simple_chanel':
+    elif prod_select == 'Single_Band':
         canais, _ = obter_canais_disponiveis(sat)
         canal = selecionar_canal(canais)
         dt_inicio, dt_fim, passo = obter_periodo(sat, canal)
         baixar_canal_simples(sat, canal, dt_inicio, dt_fim, passo, dir_fig)
-
-    else:
-        print(f"❌ Produto '{prod_select}' inválido!")
-        print("   Opções válidas: 'simple_chanel', 'true_color', 'swd', 'cpd', 'wvd'")
-        return False
 
     print(f"\n{'='*50}")
     print("✅ PROCESSO CONCLUÍDO!")
@@ -501,6 +564,6 @@ if __name__ == "__main__":
     print("="*50)
 
     sat = input('\nDigite o satélite (goes16 ou goes19): ').lower()
-    prod = input('Digite o produto (simple_chanel, true_color, swd, cpd ou wvd): ').lower()
+    prod = input(f"Digite o produto ({', '.join(PRODUTOS_VALIDOS)}): ")
 
     select_prod(sat, prod)

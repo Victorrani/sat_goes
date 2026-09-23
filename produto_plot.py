@@ -13,7 +13,8 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 import warnings
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+from matplotlib.patches import Patch
 
 # Configuração inicial
 matplotlib.use('Agg')
@@ -78,9 +79,9 @@ def get_colormap(canal, usar_noaa=False):
     
     if canal in canais_infravermelho:
         if canal == 'ch13' and usar_noaa:
-            return cmap_noaa, -100, 55, "Brightness Temperature (C)"
+            return cmap_noaa, -80, 60, "Brightness Temperature (C)"
         else:
-            return cmap_gray_r, -100, 55, "Brightness Temperature (C)"
+            return cmap_gray_r, -80, 60, "Brightness Temperature (C)"
     elif canal in canais_visiveis:
         return cmap_gray, 0, 100, "Reflectance (%)"
     elif canal in canais_nir:
@@ -90,9 +91,16 @@ def get_colormap(canal, usar_noaa=False):
     elif canal == 'swd':
         return cmap_diff, -6, 6, "SWD (K)"
     elif canal == 'cpd':
-        return cmap_cpd, -4, 12, "CPD (K)"
+        return cmap_cpd, -12, 4, "CPD (K)"
     elif canal == 'wvd':
-        return cmap_wvd, -2.5, 2.5, "WVD (K)" 
+        return cmap_wvd, -2.5, 2.5, "WVD (K)"
+    elif canal == 'sod':
+        # Faixa aproximada: o guia (ABIQuickGuide_SplitOzoneDiff.pdf) não informa
+        # valores numéricos, só descreve qualitativamente (nuvens altas ~0/positivo,
+        # céu claro bem negativo). Ajustar se surgir uma referência com stops oficiais.
+        return 'RdBu_r', -30, 10, "SOD (K)"
+    elif canal == 'swvd':
+        return 'turbo', -30, 2, "SWVD (K)"
     else:
         return cmap_gray_r, -40, 80, "Brightness Temperature (C)"
 
@@ -157,34 +165,6 @@ def detectar_canais_disponiveis(caminho_caso):
     
     return sorted(canais)
 
-def detectar_se_e_true_color(caminho_caso):
-    """
-    Detecta se o caso é True Color
-    """
-    canais = detectar_canais_disponiveis(caminho_caso)
-    return 'ch01' in canais and 'ch02' in canais and 'ch03' in canais
-
-def detectar_se_e_swd(caminho_caso):
-    """
-    Detecta se o caso é SWD (Split Window Difference)
-    """
-    canais = detectar_canais_disponiveis(caminho_caso)
-    return 'ch13' in canais and 'ch15' in canais
-
-def detectar_se_e_cpd(caminho_caso):
-    """
-    Detecta se o caso é CPD (Cloud Phase Difference)
-    """
-    canais = detectar_canais_disponiveis(caminho_caso)
-    return 'ch11' in canais and 'ch14' in canais
-
-def detectar_se_e_wvd(caminho_caso):
-    """
-    Detecta se o caso é WVD (Water vapor difference)
-    """
-    canais = detectar_canais_disponiveis(caminho_caso)
-    return 'ch08' in canais and 'ch13' in canais
-
 # ============================================================================
 # FUNÇÕES DE INTERAÇÃO COM USUÁRIO
 # ============================================================================
@@ -204,23 +184,10 @@ def listar_casos_disponiveis():
         for i, caso in enumerate(casos, 1):
             caminho_caso = os.path.join(DIRFIG, caso)
             sat = detectar_satelite(caminho_caso, caso)
-            
-            # Detectar tipo de produto
-            is_tc = detectar_se_e_true_color(caminho_caso)
-            is_swd = detectar_se_e_swd(caminho_caso)
-            is_cpd = detectar_se_e_cpd(caminho_caso)
-            is_wvd = detectar_se_e_wvd(caminho_caso)
-            
-            if is_tc:
-                tipo = "True Color"
-            elif is_swd:
-                tipo = "SWD"
-            elif is_cpd:
-                tipo = "CPD"
-            elif is_wvd:
-                tipo = "WVD"
-            else:
-                tipo = "Canal(ais) individual(is)"
+
+            # Detecta TODOS os produtos possíveis para o caso (pode ser mais de um)
+            produtos = detectar_produtos_disponiveis(caminho_caso)
+            tipo = ', '.join(produtos) if produtos else "Canal(ais) individual(is)"
             
             if sat:
                 print(f"   {i}. {caso} [{sat.upper()}] - {tipo}")
@@ -385,14 +352,14 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
             # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black', zorder=301)
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold', zorder=301)
             
             # Shapefile
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(), 
-                                 edgecolor='black', facecolor='none', linewidth=0.6)
+                                 edgecolor='gold', facecolor='none', linewidth=0.6)
             
             # Plot
             ticks = np.arange(0, 101, 20) if tipo_canal in ['visivel', 'nir'] else np.arange(vmin, vmax+1, 20)
@@ -416,13 +383,13 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             gl.ylabel_style = {'fontsize': 14}
             
             # Título
-            tipo_str = {'visivel': 'VIS', 'vapor': 'WV', 'ir': 'IR', 'nir': 'NIR'}.get(tipo_canal, canal.upper())
+            tipo_str = {'visivel': 'VIS', 'water_vapor': 'WV', 'ir': 'IR', 'nir': 'NIR'}.get(tipo_canal, canal.upper())
             
             if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {sat.upper()} | {canal.upper()} ({tipo_str}) | {data_str} UTC"
+                titulo = f"{data_str} UTC\n{titulo_personalizado} | {sat.upper()} | {canal.upper()} ({tipo_str})"
                 nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{canal}_{data_str}.png"
             else:
-                titulo = f"{sat.upper()} | {canal.upper()} ({tipo_str}) | {data_str} UTC"
+                titulo = f"{data_str} UTC\n{sat.upper()} | {canal.upper()} ({tipo_str})"
                 nome_arquivo = f"{sat.upper()}_{canal}_{data_str}.png"
             
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
@@ -525,13 +492,13 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
             # Criar figura
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
             
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black')
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black')
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold')
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold')
             
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='black', facecolor='none', linewidth=0.6)
+                                 edgecolor='gold', facecolor='none', linewidth=0.6)
             
             ax.imshow(RGB[::-1], extent=[ch02.lon.min(), ch02.lon.max(),
                                           ch02.lat.min(), ch02.lat.max()],
@@ -549,10 +516,10 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
             gl.ylabel_style = {'fontsize': 14}
             
             if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {sat.upper()} | {data_str} UTC"
+                titulo = f"{data_str} UTC\n{titulo_personalizado} | {sat.upper()} | True Color RGB"
                 nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{data_str}.png"
             else:
-                titulo = f"{sat.upper()} | True Color | {data_str} UTC"
+                titulo = f"{data_str} UTC\n{sat.upper()} | True Color RGB"
                 nome_arquivo = f"{sat.upper()}_true_color_{data_str}.png"
             
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
@@ -569,391 +536,435 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
     print(f"Plotagem True Color concluida!")
 
 # ============================================================================
-# FUNÇÃO DE PLOTAGEM SWD
+# AIRMASS RGB (ch08, ch10, ch12, ch13)
 # ============================================================================
 
-def plot_swd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
+def plot_airmass(caso, sat, extent=None, titulo_personalizado=None):
     """
-    Plota composição SWD (Split Window Difference) usando canais 13 e 15
-    SWD = ch13 - ch15
+    Plota o produto Airmass RGB, usado para monitorar ciclogênese, jatos e
+    anomalias de vorticidade potencial (PV).
+
+    Red   = WV6.2 - WV7.3 (ch08 - ch10), faixa -26.2 a 0.6°C    [= mesmos canais do SWVD]
+    Green = IR9.7 - IR10.8 (ch12 - ch13), faixa -43.2 a 6.7°C   [= mesmos canais do SOD]
+    Blue  = WV6.2 (ch08) invertido, faixa -29.25 a -64.65°C
+    Sem correção de gama.
+
+    Fonte: QuickGuide_GOESR_AirMassRGB_final.pdf (NASA SPoRT, específico do GOES-R)
     """
     caminho_caso = os.path.join(DIRFIG, caso)
     caminho_fig = os.path.join(caminho_caso, 'fig')
     os.makedirs(caminho_fig, exist_ok=True)
-    
-    ch13_path = os.path.join(caminho_caso, 'ch13')
-    ch15_path = os.path.join(caminho_caso, 'ch15')
-    
-    if not all(os.path.exists(p) for p in [ch13_path, ch15_path]):
-        print(f"ERRO: Canais 13 e 15 nao encontrados em {caminho_caso}")
+
+    canais = ['ch08', 'ch10', 'ch12', 'ch13']
+    paths = {c: os.path.join(caminho_caso, c) for c in canais}
+
+    if not all(os.path.exists(p) for p in paths.values()):
+        print(f"ERRO: Canais ch08, ch10, ch12 e ch13 nao encontrados em {caminho_caso}")
         return
-    
-    ch13_files = sorted([f for f in os.listdir(ch13_path) if f.endswith('.nc')])
-    ch15_files = sorted([f for f in os.listdir(ch15_path) if f.endswith('.nc')])
-    
-    if not ch13_files or not ch15_files:
-        print(f"ERRO: Nenhum arquivo encontrado nos canais")
+
+    arquivos = {c: sorted([f for f in os.listdir(paths[c]) if f.endswith('.nc')]) for c in canais}
+    if not all(arquivos.values()):
+        print(f"ERRO: Nenhum arquivo encontrado em um dos canais")
         return
-    
-    # Encontrar timestamps comuns
-    timestamps_ch13 = [f.split('_')[1][:12] for f in ch13_files]
-    timestamps_ch15 = [f.split('_')[1][:12] for f in ch15_files]
-    timestamps_comuns = sorted(set(timestamps_ch13) & set(timestamps_ch15))
-    
+
+    timestamps_por_canal = {c: set(f.split('_')[1][:12] for f in arquivos[c]) for c in canais}
+    timestamps_comuns = sorted(set.intersection(*timestamps_por_canal.values()))
+
     if not timestamps_comuns:
-        print("ERRO: Nenhum timestamp comum entre ch13 e ch15!")
+        print("ERRO: Nenhum timestamp comum entre ch08, ch10, ch12 e ch13!")
         return
-    
-    print(f"\nPlotando {len(timestamps_comuns)} imagens SWD...")
+
+    print(f"\nPlotando {len(timestamps_comuns)} imagens Airmass RGB...")
     print(f"Satelite: {sat.upper()}")
-    print(f"Formula: SWD = ch13 - ch15")
-    
-    # Colormap para SWD
-    cmap_uso, vmin, vmax, label = get_colormap('swd')
-    
-    # Ticks
-    ticks = np.arange(vmin, vmax + 0.5, 1)
-    
+    print("Red = ch08-ch10 (-26.2/0.6C) | Green = ch12-ch13 (-43.2/6.7C) | Blue = ch08 invertido (-29.25/-64.65C)")
+
     for i, ts in enumerate(timestamps_comuns, 1):
         try:
-            # Encontrar arquivos correspondentes
-            ch13_file = [f for f in ch13_files if ts in f][0]
-            ch15_file = [f for f in ch15_files if ts in f][0]
-            
+            arq_nome = {c: [f for f in arquivos[c] if ts in f][0] for c in canais}
+
             print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
-            
-            # Abrir dados
-            arq13 = xr.open_dataset(os.path.join(ch13_path, ch13_file), engine='netcdf4')
-            arq15 = xr.open_dataset(os.path.join(ch15_path, ch15_file), engine='netcdf4')
-            
-            # Extrair dados
-            dados13 = arq13.Band1.data / 100 - 273.15
-            dados15 = arq15.Band1.data / 100 - 273.15
-            
-            # Calcular SWD
-            swd = dados13 - dados15
-            
-            # Filtrar valores extremos
-            swd = np.where(np.abs(swd) > 50, np.nan, swd)
-            
-            # Obter coordenadas
-            lats = arq13.lat.data
-            lons = arq13.lon.data
-            
-            # Criar figura
+
+            ds = {c: xr.open_dataset(os.path.join(paths[c], arq_nome[c]), engine='netcdf4') for c in canais}
+
+            c_temp = {c: ds[c].Band1.data / 100 - 273.15 for c in canais}
+
+            red_raw = c_temp['ch08'] - c_temp['ch10']
+            green_raw = c_temp['ch12'] - c_temp['ch13']
+            blue_raw = c_temp['ch08']
+
+            # Faixas oficiais: QuickGuide_GOESR_AirMassRGB_final.pdf (NASA SPoRT)
+            R = np.clip((red_raw - (-26.2)) / (0.6 - (-26.2)), 0, 1)
+            G = np.clip((green_raw - (-43.2)) / (6.7 - (-43.2)), 0, 1)
+            B = np.clip((-29.25 - blue_raw) / (-29.25 - (-64.65)), 0, 1)
+
+            RGB = np.stack([R, G, B], axis=2)
+
+            lats = ds['ch08'].lat.data
+            lons = ds['ch08'].lon.data
+
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
-            
-            # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black', zorder=301)
-            
-            # Shapefile
+
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold', zorder=301)
+
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='black', facecolor='none', linewidth=0.6)
-            
-            # Plot SWD
-            im = ax.imshow(swd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
-                          transform=ccrs.PlateCarree(), cmap=cmap_uso, 
-                          vmin=vmin, vmax=vmax, origin='lower')
-            
-            # Colorbar
-            cbar = plt.colorbar(im, ax=ax, orientation='vertical', 
-                               pad=0.05, aspect=20, shrink=0.8, 
-                               extend='both', ticks=ticks)
-            cbar.set_label(label, fontsize=12)
-            cbar.ax.tick_params(labelsize=10)
-            
-            # Extent
+                                 edgecolor='gold', facecolor='none', linewidth=0.6)
+
+            ax.imshow(RGB, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+                      transform=ccrs.PlateCarree(), origin='lower')
+
             if extent:
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
             else:
                 ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
-            
-            # Gridlines
+
             gl = ax.gridlines(draw_labels=True)
             gl.top_labels = False
             gl.right_labels = False
             gl.xlabel_style = {'fontsize': 14}
             gl.ylabel_style = {'fontsize': 14}
-            
-            # Título
+
             if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {sat.upper()} | SWD | {ts} UTC"
-                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_swd_{ts}.png"
+                titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | Airmass RGB"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_airmass_{ts}.png"
             else:
-                titulo = f"{sat.upper()} | Split Window Difference (SWD) | {ts} UTC"
-                nome_arquivo = f"{sat.upper()}_swd_{ts}.png"
-            
+                titulo = f"{ts} UTC\n{sat.upper()} | Airmass RGB"
+                nome_arquivo = f"{sat.upper()}_airmass_{ts}.png"
+
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
             plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
             plt.close(fig)
-            
-            arq13.close()
-            arq15.close()
-            
+
+            for c in canais:
+                ds[c].close()
+
         except Exception as e:
             print(f"   ERRO ao processar {ts}: {e}")
-    
-    print(f"Plotagem SWD concluida!")
 
-def plot_wvd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
+    print(f"Plotagem Airmass RGB concluida!")
+
+# ============================================================================
+# PRODUTOS DE DIFERENÇA (SWD, CPD, WVD, SOD, SWVD)
+# ============================================================================
+
+DIFERENCA_INFO = {
+    'swd': {
+        'canal_a': 'ch13',
+        'canal_b': 'ch15',
+        'titulo': 'Split Window Difference (SWD)',
+        'formula_texto': 'SWD = ch13 - ch15',
+        'aplicacao': 'Deteccao de nuvens baixas, fogo e neblina',
+        'cor_linha': 'black',
+    },
+    'cpd': {
+        'canal_a': 'ch14',
+        'canal_b': 'ch11',
+        'titulo': 'Cloud Phase Difference (CPD)',
+        'formula_texto': 'CPD = ch14 - ch11',
+        'aplicacao': 'Deteccao de fase de nuvens (gelo/agua) - fonte: ABIQuickGuide_G16_CloudPhaseBTD.pdf',
+        'cor_linha': 'black',
+    },
+    'wvd': {
+        'canal_a': 'ch08',
+        'canal_b': 'ch13',
+        'titulo': 'Water Vapor - IR Difference (WVD)',
+        'formula_texto': 'WVD = ch08 - ch13',
+        'aplicacao': "Deteccao de overshooting top (topos convectivos que penetram a tropopausa)",
+        'cor_linha': 'gold',
+    },
+    'sod': {
+        'canal_a': 'ch12',
+        'canal_b': 'ch13',
+        'titulo': 'Split Ozone Difference (SOD)',
+        'formula_texto': 'SOD = ch12 - ch13',
+        'aplicacao': "Influencia do ozonio estratosferico; componente verde do Airmass RGB - fonte: ABIQuickGuide_SplitOzoneDiff.pdf",
+        'cor_linha': 'black',
+    },
+    'swvd': {
+        'canal_a': 'ch08',
+        'canal_b': 'ch10',
+        'titulo': 'Split Water Vapor Difference (SWVD)',
+        'formula_texto': 'SWVD = ch08 - ch10',
+        'aplicacao': "Deteccao de cirros finos e umidade em niveis medios/altos; componente vermelho do Airmass RGB - fonte: ABIQuickGuide_SplitWV_BTDiffv2.pdf",
+        'cor_linha': 'black',
+        'tick_step': 2,
+    },
+}
+
+# Canais necessários por produto - usado pela detecção automática em 2.plot_sat.py.
+# Derivado de DIFERENCA_INFO (fonte única) + True_Color/AirMass, que não são
+# diferenças simples de 2 canais.
+PRODUTOS_CANAIS = {
+    'True_Color': ['ch01', 'ch02', 'ch03'],
+    'AirMass': ['ch08', 'ch10', 'ch12', 'ch13'],
+}
+for _tipo, _info in DIFERENCA_INFO.items():
+    PRODUTOS_CANAIS[_tipo.upper()] = [_info['canal_a'], _info['canal_b']]
+
+def detectar_produtos_disponiveis(caminho_caso):
     """
-    Plota composição WVD (Water Vapor Difference) usando canais 8 e 13
-    WVD = ch08 - ch13
-    Aplicação: Detecção de vapor d'água e umidade na alta troposfera
+    Retorna a lista de produtos (True_Color, AirMass, SWD, CPD, WVD, SOD, SWVD)
+    cujos canais necessários estão TODOS presentes no caso - um caso pode
+    satisfazer vários produtos ao mesmo tempo (ex: uma pasta com os 16 canais).
+    A ordem segue PRODUTOS_CANAIS: produtos com mais canais (mais específicos)
+    primeiro, para exibição mais intuitiva.
+    """
+    canais_disponiveis = set(detectar_canais_disponiveis(caminho_caso))
+    produtos = [p for p, requeridos in PRODUTOS_CANAIS.items()
+                if set(requeridos).issubset(canais_disponiveis)]
+    return sorted(produtos, key=lambda p: -len(PRODUTOS_CANAIS[p]))
+
+def plot_diferenca(caso, sat, tipo, extent=None, titulo_personalizado=None, cmap=None):
+    """
+    Plota um produto de diferença de temperatura de brilho entre dois canais.
+    diff = canal_a - canal_b, conforme definido em DIFERENCA_INFO[tipo].
+    Cobre SWD, CPD, WVD, Ozone e SWVD com a mesma lógica (evita duplicar
+    a mesma sequência de codigo 5 vezes, que foi a causa do bug de sinal do CPD).
+    """
+    info = DIFERENCA_INFO[tipo]
+    canal_a, canal_b = info['canal_a'], info['canal_b']
+
+    caminho_caso = os.path.join(DIRFIG, caso)
+    caminho_fig = os.path.join(caminho_caso, 'fig')
+    os.makedirs(caminho_fig, exist_ok=True)
+
+    path_a = os.path.join(caminho_caso, canal_a)
+    path_b = os.path.join(caminho_caso, canal_b)
+
+    if not all(os.path.exists(p) for p in [path_a, path_b]):
+        print(f"ERRO: Canais {canal_a} e {canal_b} nao encontrados em {caminho_caso}")
+        return
+
+    files_a = sorted([f for f in os.listdir(path_a) if f.endswith('.nc')])
+    files_b = sorted([f for f in os.listdir(path_b) if f.endswith('.nc')])
+
+    if not files_a or not files_b:
+        print(f"ERRO: Nenhum arquivo encontrado nos canais")
+        return
+
+    timestamps_a = [f.split('_')[1][:12] for f in files_a]
+    timestamps_b = [f.split('_')[1][:12] for f in files_b]
+    timestamps_comuns = sorted(set(timestamps_a) & set(timestamps_b))
+
+    if not timestamps_comuns:
+        print(f"ERRO: Nenhum timestamp comum entre {canal_a} e {canal_b}!")
+        return
+
+    print(f"\nPlotando {len(timestamps_comuns)} imagens {info['titulo']}...")
+    print(f"Satelite: {sat.upper()}")
+    print(f"Formula: {info['formula_texto']}")
+
+    cmap_uso, vmin, vmax, label = get_colormap(tipo)
+    if cmap:
+        cmap_uso = cmap
+    if 'tick_step' in info:
+        ticks = np.arange(vmin, vmax + info['tick_step'], info['tick_step'])
+    else:
+        ticks = np.linspace(vmin, vmax, 9)
+    cor_linha = info.get('cor_linha', 'gold')
+
+    for i, ts in enumerate(timestamps_comuns, 1):
+        try:
+            arq_a_nome = [f for f in files_a if ts in f][0]
+            arq_b_nome = [f for f in files_b if ts in f][0]
+
+            print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
+
+            arq_a = xr.open_dataset(os.path.join(path_a, arq_a_nome), engine='netcdf4')
+            arq_b = xr.open_dataset(os.path.join(path_b, arq_b_nome), engine='netcdf4')
+
+            dados_a = arq_a.Band1.data / 100 - 273.15
+            dados_b = arq_b.Band1.data / 100 - 273.15
+
+            diff = dados_a - dados_b
+            diff = np.where(np.abs(diff) > 50, np.nan, diff)
+
+            lats = arq_a.lat.data
+            lons = arq_a.lon.data
+
+            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
+
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color=cor_linha, zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color=cor_linha, zorder=301)
+
+            if os.path.exists(SHAPEFILE_PATH):
+                shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
+                ax.add_geometries(shapefile, ccrs.PlateCarree(),
+                                 edgecolor=cor_linha, facecolor='none', linewidth=0.6)
+
+            im = ax.imshow(diff, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+                          transform=ccrs.PlateCarree(), cmap=cmap_uso,
+                          vmin=vmin, vmax=vmax, origin='lower')
+
+            cbar = plt.colorbar(im, ax=ax, orientation='vertical',
+                               pad=0.05, aspect=20, shrink=0.8,
+                               extend='both', ticks=ticks)
+            cbar.set_label(label, fontsize=12)
+            cbar.ax.tick_params(labelsize=10)
+
+            if extent:
+                ax.set_extent(extent, crs=ccrs.PlateCarree())
+            else:
+                ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
+
+            gl = ax.gridlines(draw_labels=True)
+            gl.top_labels = False
+            gl.right_labels = False
+            gl.xlabel_style = {'fontsize': 14}
+            gl.ylabel_style = {'fontsize': 14}
+
+            if titulo_personalizado:
+                titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | {tipo.upper()}"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{tipo}_{ts}.png"
+            else:
+                titulo = f"{ts} UTC\n{sat.upper()} | {info['titulo']}"
+                nome_arquivo = f"{sat.upper()}_{tipo}_{ts}.png"
+
+            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
+            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
+            plt.close(fig)
+
+            arq_a.close()
+            arq_b.close()
+
+        except Exception as e:
+            print(f"   ERRO ao processar {ts}: {e}")
+
+    print(f"Plotagem {info['titulo']} concluida!")
+
+# ============================================================================
+# WVD COMO DESTAQUE DE OVERSHOOTING TOP (fundo IR + máscara acima do limiar)
+# ============================================================================
+
+def plot_wvd_overshooting(caso, sat, extent=None, titulo_personalizado=None, limiar=3.0):
+    """
+    Plota o WVD (Water Vapor - IR Difference, ch08 - ch13) como destaque de
+    overshooting top: fundo em tons de cinza do canal IR (ch13) e realce colorido
+    apenas onde BTD > limiar (K).
+
+    Por que não como campo contínuo? O ATBD oficial (ABIQuickGuide_OvershootingTop_
+    ATBD.pdf, "Overshooting Top and Enhanced-V Detection") mostra que um limiar de
+    +2K já identifica boa parte da bigorna convectiva inteira como "overshooting"
+    (não só o topo de fato) e testa entre 2K e 4K; nenhum limiar único é perfeito.
+    Colorir o campo contínuo nessa faixa estreita satura em branco/preto em
+    qualquer cena com convecção profunda espalhada. A técnica operacional é essa
+    máscara: destaca só os pixels acima do limiar sobre um fundo IR de referência.
     """
     caminho_caso = os.path.join(DIRFIG, caso)
     caminho_fig = os.path.join(caminho_caso, 'fig')
     os.makedirs(caminho_fig, exist_ok=True)
-    
+
     ch08_path = os.path.join(caminho_caso, 'ch08')
     ch13_path = os.path.join(caminho_caso, 'ch13')
-    
+
     if not all(os.path.exists(p) for p in [ch08_path, ch13_path]):
         print(f"ERRO: Canais 8 e 13 nao encontrados em {caminho_caso}")
         return
-    
+
     ch08_files = sorted([f for f in os.listdir(ch08_path) if f.endswith('.nc')])
     ch13_files = sorted([f for f in os.listdir(ch13_path) if f.endswith('.nc')])
-    
+
     if not ch08_files or not ch13_files:
         print(f"ERRO: Nenhum arquivo encontrado nos canais")
         return
-    
-    # Encontrar timestamps comuns
+
     timestamps_ch08 = [f.split('_')[1][:12] for f in ch08_files]
     timestamps_ch13 = [f.split('_')[1][:12] for f in ch13_files]
     timestamps_comuns = sorted(set(timestamps_ch08) & set(timestamps_ch13))
-    
+
     if not timestamps_comuns:
         print("ERRO: Nenhum timestamp comum entre ch08 e ch13!")
         return
-    
-    print(f"\nPlotando {len(timestamps_comuns)} imagens WVD...")
+
+    print(f"\nPlotando {len(timestamps_comuns)} imagens WVD (destaque de overshooting top)...")
     print(f"Satelite: {sat.upper()}")
-    print(f"Formula: WVD = ch08 - ch13")
-    print(f"Aplicação: Detecção de vapor d'água e umidade na alta troposfera")
-    
-    # Colormap para WVD
-    cmap_uso, vmin, vmax, label = get_colormap('wvd')
-    
-    # Ticks
-    ticks = np.arange(vmin, vmax + 0.5, 0.5)
-    
+    print(f"Formula: WVD = ch08 - ch13 | Limiar de destaque: {limiar}K")
+    print(f"Fonte do limiar: ABIQuickGuide_OvershootingTop_ATBD.pdf (testado entre 2K e 4K)")
+
     for i, ts in enumerate(timestamps_comuns, 1):
         try:
-            # Encontrar arquivos correspondentes
             ch08_file = [f for f in ch08_files if ts in f][0]
             ch13_file = [f for f in ch13_files if ts in f][0]
-            
+
             print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
-            
-            # Abrir dados
+
             arq08 = xr.open_dataset(os.path.join(ch08_path, ch08_file), engine='netcdf4')
             arq13 = xr.open_dataset(os.path.join(ch13_path, ch13_file), engine='netcdf4')
-            
-            # Extrair dados (Brightness Temperature em °C)
+
             dados08 = arq08.Band1.data / 100 - 273.15
             dados13 = arq13.Band1.data / 100 - 273.15
-            
-            # Calcular WVD
+
             wvd = dados08 - dados13
-            
-            # Filtrar valores extremos
             wvd = np.where(np.abs(wvd) > 50, np.nan, wvd)
-            
-            # Obter coordenadas
+
             lats = arq08.lat.data
             lons = arq08.lon.data
-            
-            # Criar figura
+
             fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
-            
-            # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='lightblue', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='lightblue', zorder=301)
-            
-            # Shapefile
+
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold', zorder=300)
+            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold', zorder=301)
+
             if os.path.exists(SHAPEFILE_PATH):
                 shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
                 ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='black', facecolor='none', linewidth=0.6)
-            
-            # Plot WVD
-            im = ax.imshow(wvd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
-                          transform=ccrs.PlateCarree(), cmap=cmap_uso, 
-                          vmin=vmin, vmax=vmax, origin='lower')
-            
-            cbar = plt.colorbar(im, ax=ax, orientation='vertical', 
-                               pad=0.05, aspect=20, shrink=0.8, ticks=ticks, extend='both')
-                               #extend='both', ticks=ticks)
-            cbar.set_label(label, fontsize=12)
-            cbar.ax.tick_params(labelsize=10)
-            
-            # Extent
+                                 edgecolor='gold', facecolor='none', linewidth=0.6)
+
+            # Fundo: canal IR (ch13) em tons de cinza, mesma faixa dos demais IR
+            ax.imshow(dados13, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+                      transform=ccrs.PlateCarree(), cmap='gray_r',
+                      vmin=-80, vmax=60, origin='lower', zorder=1)
+
+            # Realce: só os pixels com WVD acima do limiar (overshooting top).
+            # Cor sólida bem contrastante (magenta) em vez de gradiente - destaca
+            # melhor contra o fundo cinza. Os pixels de OT são raros e minúsculos
+            # (1-3 pixels), então dilata um pouco pra ficarem visíveis no mapa.
+            mask = (wvd > limiar) & ~np.isnan(wvd)
+            try:
+                from scipy.ndimage import binary_dilation
+                mask = binary_dilation(mask, iterations=2)
+            except ImportError:
+                pass
+            destaque = np.ma.masked_where(~mask, np.ones_like(wvd))
+            ax.imshow(destaque, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+                      transform=ccrs.PlateCarree(), cmap=ListedColormap(['magenta']),
+                      vmin=0, vmax=1, origin='lower', zorder=2)
+
+            legenda = [Patch(facecolor='magenta', edgecolor='none',
+                             label=f'WVD > {limiar}K (overshooting top)')]
+            ax.legend(handles=legenda, loc='lower left', fontsize=9, framealpha=0.85)
+
             if extent:
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
             else:
                 ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
-            
-            # Gridlines
+
             gl = ax.gridlines(draw_labels=True)
             gl.top_labels = False
             gl.right_labels = False
             gl.xlabel_style = {'fontsize': 14}
             gl.ylabel_style = {'fontsize': 14}
-            
-            # Título
+
             if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {sat.upper()} | WVD | {ts} UTC"
+                titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | WVD (OT > {limiar}K)"
                 nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_wvd_{ts}.png"
             else:
-                titulo = f"{sat.upper()} | Water Vapor Difference (WVD) | {ts} UTC"
+                titulo = f"{ts} UTC\n{sat.upper()} | Water Vapor - IR Difference (OT > {limiar}K)"
                 nome_arquivo = f"{sat.upper()}_wvd_{ts}.png"
-            
+
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
             plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
             plt.close(fig)
-            
+
             arq08.close()
             arq13.close()
-            
+
         except Exception as e:
             print(f"   ERRO ao processar {ts}: {e}")
-    
-    print(f"Plotagem WVD concluida!")
 
-# ============================================================================
-# FUNÇÃO DE PLOTAGEM CPD (NOVA)
-# ============================================================================
-
-def plot_cpd(caso, sat, extent=None, titulo_personalizado=None, cmap=None):
-    """
-    Plota composição CPD (Cloud Phase Difference) usando canais 11 e 14
-    CPD = ch11 - ch14 (diferença para detecção de fase de nuvens)
-    """
-    caminho_caso = os.path.join(DIRFIG, caso)
-    caminho_fig = os.path.join(caminho_caso, 'fig')
-    os.makedirs(caminho_fig, exist_ok=True)
-    
-    ch11_path = os.path.join(caminho_caso, 'ch11')
-    ch14_path = os.path.join(caminho_caso, 'ch14')
-    
-    if not all(os.path.exists(p) for p in [ch11_path, ch14_path]):
-        print(f"ERRO: Canais 11 e 14 nao encontrados em {caminho_caso}")
-        return
-    
-    ch11_files = sorted([f for f in os.listdir(ch11_path) if f.endswith('.nc')])
-    ch14_files = sorted([f for f in os.listdir(ch14_path) if f.endswith('.nc')])
-    
-    if not ch11_files or not ch14_files:
-        print(f"ERRO: Nenhum arquivo encontrado nos canais")
-        return
-    
-    # Encontrar timestamps comuns
-    timestamps_ch11 = [f.split('_')[1][:12] for f in ch11_files]
-    timestamps_ch14 = [f.split('_')[1][:12] for f in ch14_files]
-    timestamps_comuns = sorted(set(timestamps_ch11) & set(timestamps_ch14))
-    
-    if not timestamps_comuns:
-        print("ERRO: Nenhum timestamp comum entre ch11 e ch14!")
-        return
-    
-    print(f"\nPlotando {len(timestamps_comuns)} imagens CPD...")
-    print(f"Satelite: {sat.upper()}")
-    print(f"Formula: CPD = ch11 - ch14")
-    
-    # Colormap para CPD
-    cmap_uso, vmin, vmax, label = get_colormap('cpd')
-    
-    # Ticks
-    ticks = np.arange(vmin, vmax + 1, 2)
-    
-    for i, ts in enumerate(timestamps_comuns, 1):
-        try:
-            # Encontrar arquivos correspondentes
-            ch11_file = [f for f in ch11_files if ts in f][0]
-            ch14_file = [f for f in ch14_files if ts in f][0]
-            
-            print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
-            
-            # Abrir dados
-            arq11 = xr.open_dataset(os.path.join(ch11_path, ch11_file), engine='netcdf4')
-            arq14 = xr.open_dataset(os.path.join(ch14_path, ch14_file), engine='netcdf4')
-            
-            # Extrair dados
-            dados11 = arq11.Band1.data / 100 - 273.15
-            dados14 = arq14.Band1.data / 100 - 273.15
-            
-            # Calcular CPD
-            cpd = dados11 - dados14
-            
-            # Filtrar valores extremos
-            cpd = np.where(np.abs(cpd) > 50, np.nan, cpd)
-            
-            # Obter coordenadas
-            lats = arq11.lat.data
-            lons = arq11.lon.data
-            
-            # Criar figura
-            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
-            
-            # Features
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='black', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='black', zorder=301)
-            
-            # Shapefile
-            if os.path.exists(SHAPEFILE_PATH):
-                shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
-                ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='black', facecolor='none', linewidth=0.6)
-            
-            # Plot CPD
-            im = ax.imshow(cpd, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
-                          transform=ccrs.PlateCarree(), cmap=cmap_uso, 
-                          vmin=vmin, vmax=vmax, origin='lower')
-            
-            # Colorbar
-            cbar = plt.colorbar(im, ax=ax, orientation='vertical', 
-                               pad=0.05, aspect=20, shrink=0.8, 
-                               extend='both', ticks=ticks)
-            cbar.set_label(label, fontsize=12)
-            cbar.ax.tick_params(labelsize=10)
-            
-            # Extent
-            if extent:
-                ax.set_extent(extent, crs=ccrs.PlateCarree())
-            else:
-                ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
-            
-            # Gridlines
-            gl = ax.gridlines(draw_labels=True)
-            gl.top_labels = False
-            gl.right_labels = False
-            gl.xlabel_style = {'fontsize': 14}
-            gl.ylabel_style = {'fontsize': 14}
-            
-            # Título
-            if titulo_personalizado:
-                titulo = f"{titulo_personalizado} | {sat.upper()} | CPD | {ts} UTC"
-                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_cpd_{ts}.png"
-            else:
-                titulo = f"{sat.upper()} | Cloud Phase Difference (CPD) | {ts} UTC"
-                nome_arquivo = f"{sat.upper()}_cpd_{ts}.png"
-            
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
-            plt.close(fig)
-            
-            arq11.close()
-            arq14.close()
-            
-        except Exception as e:
-            print(f"   ERRO ao processar {ts}: {e}")
-    
-    print(f"Plotagem CPD concluida!")
+    print(f"Plotagem WVD (overshooting top) concluida!")
 
 # ============================================================================
 # FUNÇÃO PRINCIPAL EXPORTADA
@@ -965,10 +976,10 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
     
     Parâmetros:
         caso: str - nome do caso
-        produto: str - 'true_color', 'simple_channel', 'swd' ou 'cpd', 'wvd'
+        produto: str - 'True_Color', 'Single_Band', 'SWD', 'CPD', 'WVD', 'SOD' ou 'SWVD'
         extent: list - [lon_min, lon_max, lat_min, lat_max]
         titulo: str - título personalizado
-        cmap: str - colormap personalizado (apenas para simple_channel)
+        cmap: str - colormap personalizado (apenas para Single_Band)
         usar_noaa_ch13: bool - Força uso da paleta NOAA para ch13
     """
     
@@ -1001,27 +1012,28 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
             sat = input("   Digite o satelite (goes16/goes19): ").strip().lower()
     
     # Executar plotagem
-    if produto == 'true_color':
+    if produto == 'True_Color':
         plot_true_color(caso, sat, extent=extent, titulo_personalizado=titulo)
-        
-    elif produto == 'swd':
-        print("\nPlotando Split Window Difference (SWD)...")
-        print("SWD = ch13 - ch15")
-        plot_swd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
-        
-    elif produto == 'cpd':
-        print("\nPlotando Cloud Phase Difference (CPD)...")
-        print("CPD = ch11 - ch14")
-        print("Aplicação: Detecção de fase de nuvens (gelo/água)")
-        plot_cpd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
 
-    elif produto == 'wvd':
-        print("\nPlotando Water Vapor Difference (WVD)...")
-        print("CPD = ch08 - ch13")
-        print("Aplicação: Detecção de fase de nuvens (gelo/água)")
-        plot_wvd(caso, sat, extent=extent, titulo_personalizado=titulo, cmap=cmap)
+    elif produto == 'AirMass':
+        plot_airmass(caso, sat, extent=extent, titulo_personalizado=titulo)
 
-    elif produto == 'simple_channel':
+    elif produto == 'SWD':
+        plot_diferenca(caso, sat, 'swd', extent=extent, titulo_personalizado=titulo, cmap=cmap)
+
+    elif produto == 'CPD':
+        plot_diferenca(caso, sat, 'cpd', extent=extent, titulo_personalizado=titulo, cmap=cmap)
+
+    elif produto == 'WVD':
+        plot_wvd_overshooting(caso, sat, extent=extent, titulo_personalizado=titulo)
+
+    elif produto == 'SOD':
+        plot_diferenca(caso, sat, 'sod', extent=extent, titulo_personalizado=titulo, cmap=cmap)
+
+    elif produto == 'SWVD':
+        plot_diferenca(caso, sat, 'swvd', extent=extent, titulo_personalizado=titulo, cmap=cmap)
+
+    elif produto == 'Single_Band':
         print("\nPlotando canal individual...")
         
         canais = []
