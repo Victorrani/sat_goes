@@ -102,7 +102,7 @@ def get_colormap(canal, usar_noaa=False):
         # céu claro bem negativo). Ajustar se surgir uma referência com stops oficiais.
         return 'RdBu_r', -30, 10, "SOD (K)"
     elif canal == 'swvd':
-        return 'turbo', -30, 2, "SWVD (K)"
+        return 'nipy_spectral', -30, 5, "SWVD (K)"
     else:
         return cmap_gray_r, -40, 80, "Brightness Temperature (C)"
 
