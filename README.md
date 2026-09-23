@@ -118,10 +118,6 @@ __________________________________________________________________
 
 📸 Exemplos de plotagem
 Furacão Melissa (GOES-19, 2025-10-28 16h UTC)
-
-Visão geral (mosaico dos produtos)
-![Furacão Melissa - GOES-19 - Mosaico de produtos](/docs/MELISSA_GOES19_mosaico_produtos_202510281600.png)
-
 True_Color
 ![Furacão Melissa - GOES-19 - True Color](/docs/MELISSA_GOES19_202510281600.png)
 
