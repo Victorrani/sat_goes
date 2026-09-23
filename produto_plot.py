@@ -97,10 +97,7 @@ def get_colormap(canal, usar_noaa=False):
     elif canal == 'wvd':
         return cmap_wvd, -2.5, 2.5, "WVD (K)"
     elif canal == 'sod':
-        # Faixa aproximada: o guia (ABIQuickGuide_SplitOzoneDiff.pdf) não informa
-        # valores numéricos, só descreve qualitativamente (nuvens altas ~0/positivo,
-        # céu claro bem negativo). Ajustar se surgir uma referência com stops oficiais.
-        return 'RdBu_r', -30, 10, "SOD (K)"
+        return 'jet', -50, 5, "SOD (K)"
     elif canal == 'swvd':
         return 'nipy_spectral', -30, 5, "SWVD (K)"
     else:
