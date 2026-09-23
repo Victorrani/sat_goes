@@ -2,7 +2,7 @@
 plot_sat.py - Script principal para plotagem de imagens GOES
 """
 
-from produt_plot import (
+from produto_plot import (
     listar_casos_disponiveis,
     selecionar_caso,
     obter_extent_usuario,

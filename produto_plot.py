@@ -1,5 +1,5 @@
 """
-produt_plot.py - Módulo para plotagem de imagens GOES
+produto_plot.py - Módulo para plotagem de imagens GOES
 Autor: Victor Ranieri e DeepSeek
 Descrição: Funções para plotar canais individuais, composições True Color, SWD e CPD
 """

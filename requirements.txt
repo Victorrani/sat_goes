@@ -1,0 +1,11 @@
+# Dependências pip essenciais para quem não usa conda (ver environment.yml para o ambiente completo).
+requests
+beautifulsoup4
+wget
+numpy
+xarray
+netCDF4
+matplotlib
+cartopy
+h5py
+earthaccess

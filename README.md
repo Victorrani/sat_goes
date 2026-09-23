@@ -31,6 +31,12 @@ Crie o ambiente Conda com todas as dependências:
 ```bash
 conda env create -f environment.yml
 ```
+
+Ou, se preferir pip/venv, instale as dependências essenciais:
+
+```bash
+pip install -r requirements.txt
+```
 Download dos dados de satélite
 
 ```bash
@@ -50,8 +56,9 @@ python 2.plot_sat.py
 ├── environment.yml
 ├── fig_dados
 ├── produto_download.py
-├── produt_plot.py
+├── produto_plot.py
 ├── README.md
+├── requirements.txt
 ├── scripts
 │   ├── get_IMERG.py
 │   ├── get_MERGE.py
