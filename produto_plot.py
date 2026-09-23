@@ -682,6 +682,7 @@ DIFERENCA_INFO = {
         'formula_texto': 'SOD = ch12 - ch13',
         'aplicacao': "Influencia do ozonio estratosferico; componente verde do Airmass RGB - fonte: ABIQuickGuide_SplitOzoneDiff.pdf",
         'cor_linha': 'black',
+        'tick_step': 5,
     },
     'swvd': {
         'canal_a': 'ch08',
