@@ -97,7 +97,7 @@ def get_colormap(canal, usar_noaa=False):
     elif canal == 'wvd':
         return cmap_wvd, -2.5, 2.5, "WVD (K)"
     elif canal == 'sod':
-        return 'jet', -50, 5, "SOD (K)"
+        return 'jet', -50, 15, "SOD (K)"
     elif canal == 'swvd':
         return 'nipy_spectral', -30, 5, "SWVD (K)"
     else:
