@@ -122,6 +122,9 @@ Furacão Melissa (GOES-19, 2025-10-28 16h UTC)
 True_Color
 ![Furacão Melissa - GOES-19 - True Color](/docs/MELISSA_GOES19_202510281600.png)
 
+Single_Band ch13 com paleta NOAA (IR realçado)
+![Furacão Melissa - GOES-19 - ch13 NOAA](/docs/MELISSA_GOES19_ch13_noaa_202510281600.png)
+
 AirMass RGB
 ![Furacão Melissa - GOES-19 - AirMass](/docs/MELISSA_GOES19_airmass_202510281600.png)
 

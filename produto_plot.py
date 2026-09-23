@@ -79,7 +79,9 @@ def get_colormap(canal, usar_noaa=False):
     
     if canal in canais_infravermelho:
         if canal == 'ch13' and usar_noaa:
-            return cmap_noaa, -80, 60, "Brightness Temperature (C)"
+            # Paleta NOAA tem os estágios de cor calibrados para essa faixa
+            # específica - usar -80/60 (igual ao cinza padrão) satura a imagem.
+            return cmap_noaa, -100, 100, "Brightness Temperature (C)"
         else:
             return cmap_gray_r, -80, 60, "Brightness Temperature (C)"
     elif canal in canais_visiveis:
@@ -384,13 +386,15 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
             
             # Título
             tipo_str = {'visivel': 'VIS', 'water_vapor': 'WV', 'ir': 'IR', 'nir': 'NIR'}.get(tipo_canal, canal.upper())
-            
+            sufixo_noaa = '_noaa' if (canal == 'ch13' and usar_noaa_ch13) else ''
+            tipo_str_titulo = f"{tipo_str} NOAA" if sufixo_noaa else tipo_str
+
             if titulo_personalizado:
-                titulo = f"{data_str} UTC\n{titulo_personalizado} | {sat.upper()} | {canal.upper()} ({tipo_str})"
-                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{canal}_{data_str}.png"
+                titulo = f"{data_str} UTC\n{titulo_personalizado} | {sat.upper()} | {canal.upper()} ({tipo_str_titulo})"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_{canal}{sufixo_noaa}_{data_str}.png"
             else:
-                titulo = f"{data_str} UTC\n{sat.upper()} | {canal.upper()} ({tipo_str})"
-                nome_arquivo = f"{sat.upper()}_{canal}_{data_str}.png"
+                titulo = f"{data_str} UTC\n{sat.upper()} | {canal.upper()} ({tipo_str_titulo})"
+                nome_arquivo = f"{sat.upper()}_{canal}{sufixo_noaa}_{data_str}.png"
             
             plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
             plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=300, bbox_inches='tight')
