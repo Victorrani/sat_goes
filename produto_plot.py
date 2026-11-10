@@ -603,6 +603,45 @@ def adicionar_legenda_rgb(fig, ax, legenda, nota='As cores variam com hora,\nest
                 fontsize=7, style='italic', color=tinta_suave, va='top', linespacing=1.15)
 
 
+def salvar_mapa_rgb(RGB, lats, lons, extent, titulo, caminho_arquivo, legenda,
+                    nota='As cores variam com hora,\nestação e latitude.'):
+    """
+    Desenha uma composição RGB (lat crescente, origin='lower') em mapa
+    PlateCarree com costas/fronteiras/estados, título e legenda de cores, e salva.
+    """
+    fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
+
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold', zorder=300)
+    ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold', zorder=301)
+
+    if os.path.exists(SHAPEFILE_PATH):
+        shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
+        ax.add_geometries(shapefile, ccrs.PlateCarree(),
+                         edgecolor='gold', facecolor='none', linewidth=0.6)
+
+    ax.imshow(RGB, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
+              transform=ccrs.PlateCarree(), origin='lower')
+
+    if extent:
+        ax.set_extent(extent, crs=ccrs.PlateCarree())
+    else:
+        ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
+
+    gl = ax.gridlines(draw_labels=True)
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.xlabel_style = {'fontsize': 14}
+    gl.ylabel_style = {'fontsize': 14}
+
+    plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
+    # Depois do título: fig.add_axes muda o eixo corrente usado por plt.title
+    adicionar_legenda_rgb(fig, ax, legenda, nota=nota)
+    plt.savefig(caminho_arquivo, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+NOTA_DIURNO = 'Somente diurno. As cores variam\ncom hora, estação e latitude.'
+
+
 def plot_airmass(caso, sat, extent=None, titulo_personalizado=None):
     """
     Plota o produto Airmass RGB, usado para monitorar ciclogênese, jatos e
@@ -666,30 +705,6 @@ def plot_airmass(caso, sat, extent=None, titulo_personalizado=None):
             lats = ds['ch08'].lat.data
             lons = ds['ch08'].lon.data
 
-            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
-
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold', zorder=301)
-
-            if os.path.exists(SHAPEFILE_PATH):
-                shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
-                ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='gold', facecolor='none', linewidth=0.6)
-
-            ax.imshow(RGB, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
-                      transform=ccrs.PlateCarree(), origin='lower')
-
-            if extent:
-                ax.set_extent(extent, crs=ccrs.PlateCarree())
-            else:
-                ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
-
-            gl = ax.gridlines(draw_labels=True)
-            gl.top_labels = False
-            gl.right_labels = False
-            gl.xlabel_style = {'fontsize': 14}
-            gl.ylabel_style = {'fontsize': 14}
-
             if titulo_personalizado:
                 titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | Airmass RGB"
                 nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_airmass_{ts}.png"
@@ -697,11 +712,8 @@ def plot_airmass(caso, sat, extent=None, titulo_personalizado=None):
                 titulo = f"{ts} UTC\n{sat.upper()} | Airmass RGB"
                 nome_arquivo = f"{sat.upper()}_airmass_{ts}.png"
 
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            # Depois do título: fig.add_axes muda o eixo corrente usado por plt.title
-            adicionar_legenda_rgb(fig, ax, AIRMASS_LEGENDA)
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
-            plt.close(fig)
+            salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
+                            os.path.join(caminho_fig, nome_arquivo), AIRMASS_LEGENDA)
 
             for c in canais:
                 ds[c].close()
@@ -798,30 +810,6 @@ def plot_daysnowfog(caso, sat, extent=None, titulo_personalizado=None):
             lats = ds['ch13'].lat.data[:ny]
             lons = ds['ch13'].lon.data[:nx]
 
-            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={'projection': ccrs.PlateCarree()})
-
-            ax.add_feature(cfeature.COASTLINE, linewidth=0.6, color='gold', zorder=300)
-            ax.add_feature(cfeature.BORDERS, linestyle='-', linewidth=0.6, color='gold', zorder=301)
-
-            if os.path.exists(SHAPEFILE_PATH):
-                shapefile = list(shpreader.Reader(SHAPEFILE_PATH).geometries())
-                ax.add_geometries(shapefile, ccrs.PlateCarree(),
-                                 edgecolor='gold', facecolor='none', linewidth=0.6)
-
-            ax.imshow(RGB, extent=[lons.min(), lons.max(), lats.min(), lats.max()],
-                      transform=ccrs.PlateCarree(), origin='lower')
-
-            if extent:
-                ax.set_extent(extent, crs=ccrs.PlateCarree())
-            else:
-                ax.set_extent([-115, -25, -55, 34], crs=ccrs.PlateCarree())
-
-            gl = ax.gridlines(draw_labels=True)
-            gl.top_labels = False
-            gl.right_labels = False
-            gl.xlabel_style = {'fontsize': 14}
-            gl.ylabel_style = {'fontsize': 14}
-
             if titulo_personalizado:
                 titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | Day Snow-Fog RGB"
                 nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_daysnowfog_{ts}.png"
@@ -829,12 +817,9 @@ def plot_daysnowfog(caso, sat, extent=None, titulo_personalizado=None):
                 titulo = f"{ts} UTC\n{sat.upper()} | Day Snow-Fog RGB"
                 nome_arquivo = f"{sat.upper()}_daysnowfog_{ts}.png"
 
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            # Depois do título: fig.add_axes muda o eixo corrente usado por plt.title
-            adicionar_legenda_rgb(fig, ax, DAYSNOWFOG_LEGENDA,
-                                  nota='Somente diurno. As cores variam\ncom hora, estação e latitude.')
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
-            plt.close(fig)
+            salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
+                            os.path.join(caminho_fig, nome_arquivo), DAYSNOWFOG_LEGENDA,
+                            nota=NOTA_DIURNO)
 
             for c in canais:
                 ds[c].close()
@@ -843,6 +828,207 @@ def plot_daysnowfog(caso, sat, extent=None, titulo_personalizado=None):
             print(f"   ERRO ao processar {ts}: {e}")
 
     print(f"Plotagem Day Snow-Fog RGB concluida!")
+
+# ============================================================================
+# DAY LAND CLOUD/FIRE RGB (ch02, ch03, ch06)
+# ============================================================================
+
+# Chave de interpretação da seção "RGB Interpretation" do
+# QuickGuide_GOESR_DayLandCloudFireRGB_final-1.pdf (NASA SPoRT); cores amostradas do PDF.
+DAYLANDCLOUDFIRE_LEGENDA = [
+    (['#646446'], 'Vegetação inativa /\nsolo exposto', 'verde-oliva a marrom'),
+    (['#324E21'], 'Vegetação', 'tons de verde'),
+    (['#151D25'], 'Corpos d\'água /\náreas alagadas', 'azul escuro a preto'),
+    (['#7DAFAF'], 'Nuvens baixas/médias', 'ciano acinzentado'),
+    (['#30E4DF'], 'Nuvens de gelo altas\ne espessas', 'ciano brilhante'),
+    (['#1E8CA0'], 'Neve', 'ciano'),
+    (['#1E5A5A'], 'Fumaça', 'ciano escuro'),
+    (['#C01B1C'], 'Foco de calor / fogo', 'vermelho'),
+]
+
+def plot_daylandcloudfire(caso, sat, extent=None, titulo_personalizado=None):
+    """
+    Plota o produto Day Land Cloud/Fire RGB, usado para focos de calor, fumaça,
+    cicatrizes de queimada e cobertura de neve/gelo. Somente diurno.
+    Semelhante ao Natural Color, mas com 2.2 µm no lugar de 1.6 µm no vermelho.
+
+    Red   = 2.2 µm (ch06), 0 a 100%, gama 1
+    Green = 0.86 µm (ch03), 0 a 100%, gama 1
+    Blue  = 0.64 µm (ch02), 0 a 100%, gama 1
+
+    ch02/ch03 (1 km nesta fonte) são reduzidos para a grade de 2 km do ch06.
+    Fonte: QuickGuide_GOESR_DayLandCloudFireRGB_final-1.pdf (NASA SPoRT)
+    """
+    caminho_caso = os.path.join(DIRFIG, caso)
+    caminho_fig = os.path.join(caminho_caso, 'fig')
+    os.makedirs(caminho_fig, exist_ok=True)
+
+    canais = ['ch02', 'ch03', 'ch06']
+    paths = {c: os.path.join(caminho_caso, c) for c in canais}
+
+    if not all(os.path.exists(p) for p in paths.values()):
+        print(f"ERRO: Canais ch02, ch03 e ch06 nao encontrados em {caminho_caso}")
+        return
+
+    arquivos = {c: sorted([f for f in os.listdir(paths[c]) if f.endswith('.nc')]) for c in canais}
+    if not all(arquivos.values()):
+        print(f"ERRO: Nenhum arquivo encontrado em um dos canais")
+        return
+
+    timestamps_por_canal = {c: set(f.split('_')[1][:12] for f in arquivos[c]) for c in canais}
+    timestamps_comuns = sorted(set.intersection(*timestamps_por_canal.values()))
+
+    if not timestamps_comuns:
+        print("ERRO: Nenhum timestamp comum entre ch02, ch03 e ch06!")
+        return
+
+    print(f"\nPlotando {len(timestamps_comuns)} imagens Day Land Cloud/Fire RGB...")
+    print(f"Satelite: {sat.upper()}")
+    print("Red = ch06 (0/100%) | Green = ch03 (0/100%) | Blue = ch02 (0/100%) | gama 1")
+    print("ATENCAO: produto somente diurno")
+
+    for i, ts in enumerate(timestamps_comuns, 1):
+        try:
+            arq_nome = {c: [f for f in arquivos[c] if ts in f][0] for c in canais}
+
+            print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
+
+            ds = {c: xr.open_dataset(os.path.join(paths[c], arq_nome[c]), engine='netcdf4') for c in canais}
+
+            # Refletância em % (Band1/100); canais de 1 km reduzidos para 2 km
+            refl = {
+                'ch02': ds['ch02'].Band1.coarsen(lat=2, lon=2, boundary='trim').mean().data / 100,
+                'ch03': ds['ch03'].Band1.coarsen(lat=2, lon=2, boundary='trim').mean().data / 100,
+                'ch06': ds['ch06'].Band1.data / 100,
+            }
+
+            # Grade de 1 km tem 1 pixel a menos após o coarsen: recorta todos ao menor
+            ny = min(a.shape[0] for a in refl.values())
+            nx = min(a.shape[1] for a in refl.values())
+
+            # Faixas oficiais: QuickGuide_GOESR_DayLandCloudFireRGB_final-1.pdf
+            R = np.clip(refl['ch06'][:ny, :nx] / 100, 0, 1)
+            G = np.clip(refl['ch03'][:ny, :nx] / 100, 0, 1)
+            B = np.clip(refl['ch02'][:ny, :nx] / 100, 0, 1)
+
+            RGB = np.nan_to_num(np.stack([R, G, B], axis=2))
+
+            lats = ds['ch06'].lat.data[:ny]
+            lons = ds['ch06'].lon.data[:nx]
+
+            if titulo_personalizado:
+                titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | Day Land Cloud/Fire RGB"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_daylandcloudfire_{ts}.png"
+            else:
+                titulo = f"{ts} UTC\n{sat.upper()} | Day Land Cloud/Fire RGB"
+                nome_arquivo = f"{sat.upper()}_daylandcloudfire_{ts}.png"
+
+            salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
+                            os.path.join(caminho_fig, nome_arquivo), DAYLANDCLOUDFIRE_LEGENDA,
+                            nota=NOTA_DIURNO)
+
+            for c in canais:
+                ds[c].close()
+
+        except Exception as e:
+            print(f"   ERRO ao processar {ts}: {e}")
+
+    print(f"Plotagem Day Land Cloud/Fire RGB concluida!")
+
+# ============================================================================
+# SIMPLE WATER VAPOR RGB (ch08, ch10, ch13)
+# ============================================================================
+
+# Chave de interpretação da seção "RGB Interpretation" do
+# Simple_Water_Vapor_RGB-1.pdf (NOAA/NWS); cores amostradas do PDF.
+SIMPLEWV_LEGENDA = [
+    (['#0133C4'], 'Umidade em níveis\nbaixos/médios', 'azul'),
+    (['#019201'], 'Umidade em níveis altos;\nseco abaixo', 'verde'),
+    (['#10DAFB'], 'Úmido em todos os\nníveis / sem nuvens', 'água / ciano'),
+    (['#000000'], 'Seco em todos os níveis', 'preto'),
+    (['#F789FF'], 'Nuvem média;\númido em todos os níveis', 'rosa leitoso'),
+    (['#E401FA'], 'Nuvem média; úmido em\nbaixos/médios, seco acima', 'rosa vivo'),
+    (['#FFFFFF'], 'Iniciação convectiva', 'branco'),
+    (['#FFFFFF'], 'Nuvens altas e espessas', 'branco'),
+]
+
+def plot_simple_wv(caso, sat, extent=None, titulo_personalizado=None):
+    """
+    Plota o produto Simple Water Vapor RGB, usado para ver a distribuição
+    vertical do vapor d'água: retorno de umidade em níveis baixos sem nuvens,
+    esteiras transportadoras, jatos e ondas de gravidade. Funciona dia e noite.
+
+    Red   = 10.3 µm (ch13) invertido, 5.81 a -70.86°C
+    Green = 6.2 µm (ch08) invertido, -30.48 a -58.49°C
+    Blue  = 7.3 µm (ch10) invertido, -12.12 a -28.03°C
+    O guia não informa gama; usa-se gama 1.
+
+    Fonte: Simple_Water_Vapor_RGB-1.pdf (NOAA/NWS)
+    """
+    caminho_caso = os.path.join(DIRFIG, caso)
+    caminho_fig = os.path.join(caminho_caso, 'fig')
+    os.makedirs(caminho_fig, exist_ok=True)
+
+    canais = ['ch08', 'ch10', 'ch13']
+    paths = {c: os.path.join(caminho_caso, c) for c in canais}
+
+    if not all(os.path.exists(p) for p in paths.values()):
+        print(f"ERRO: Canais ch08, ch10 e ch13 nao encontrados em {caminho_caso}")
+        return
+
+    arquivos = {c: sorted([f for f in os.listdir(paths[c]) if f.endswith('.nc')]) for c in canais}
+    if not all(arquivos.values()):
+        print(f"ERRO: Nenhum arquivo encontrado em um dos canais")
+        return
+
+    timestamps_por_canal = {c: set(f.split('_')[1][:12] for f in arquivos[c]) for c in canais}
+    timestamps_comuns = sorted(set.intersection(*timestamps_por_canal.values()))
+
+    if not timestamps_comuns:
+        print("ERRO: Nenhum timestamp comum entre ch08, ch10 e ch13!")
+        return
+
+    print(f"\nPlotando {len(timestamps_comuns)} imagens Simple Water Vapor RGB...")
+    print(f"Satelite: {sat.upper()}")
+    print("Red = ch13 inv. (5.81/-70.86C) | Green = ch08 inv. (-30.48/-58.49C) | Blue = ch10 inv. (-12.12/-28.03C)")
+
+    for i, ts in enumerate(timestamps_comuns, 1):
+        try:
+            arq_nome = {c: [f for f in arquivos[c] if ts in f][0] for c in canais}
+
+            print(f"   [{i}/{len(timestamps_comuns)}] Processando: {ts}")
+
+            ds = {c: xr.open_dataset(os.path.join(paths[c], arq_nome[c]), engine='netcdf4') for c in canais}
+
+            c_temp = {c: ds[c].Band1.data / 100 - 273.15 for c in canais}
+
+            # Faixas oficiais (invertidas: frio = contribuição alta): Simple_Water_Vapor_RGB-1.pdf
+            R = np.clip((5.81 - c_temp['ch13']) / (5.81 - (-70.86)), 0, 1)
+            G = np.clip((-30.48 - c_temp['ch08']) / (-30.48 - (-58.49)), 0, 1)
+            B = np.clip((-12.12 - c_temp['ch10']) / (-12.12 - (-28.03)), 0, 1)
+
+            RGB = np.nan_to_num(np.stack([R, G, B], axis=2))
+
+            lats = ds['ch13'].lat.data
+            lons = ds['ch13'].lon.data
+
+            if titulo_personalizado:
+                titulo = f"{ts} UTC\n{titulo_personalizado} | {sat.upper()} | Simple Water Vapor RGB"
+                nome_arquivo = f"{titulo_personalizado}_{sat.upper()}_simplewv_{ts}.png"
+            else:
+                titulo = f"{ts} UTC\n{sat.upper()} | Simple Water Vapor RGB"
+                nome_arquivo = f"{sat.upper()}_simplewv_{ts}.png"
+
+            salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
+                            os.path.join(caminho_fig, nome_arquivo), SIMPLEWV_LEGENDA)
+
+            for c in canais:
+                ds[c].close()
+
+        except Exception as e:
+            print(f"   ERRO ao processar {ts}: {e}")
+
+    print(f"Plotagem Simple Water Vapor RGB concluida!")
 
 # ============================================================================
 # PRODUTOS DE DIFERENÇA (SWD, CPD, WVD, SOD, SWVD)
@@ -894,19 +1080,21 @@ DIFERENCA_INFO = {
 }
 
 # Canais necessários por produto - usado pela detecção automática em 2.plot_sat.py.
-# Derivado de DIFERENCA_INFO (fonte única) + True_Color/AirMass/DaySnowFog, que não são
+# Derivado de DIFERENCA_INFO (fonte única) + True_Color e os RGBs, que não são
 # diferenças simples de 2 canais.
 PRODUTOS_CANAIS = {
     'True_Color': ['ch01', 'ch02', 'ch03'],
     'AirMass': ['ch08', 'ch10', 'ch12', 'ch13'],
     'DaySnowFog': ['ch03', 'ch05', 'ch07', 'ch13'],
+    'DayLandCloudFire': ['ch02', 'ch03', 'ch06'],
+    'SimpleWV': ['ch08', 'ch10', 'ch13'],
 }
 for _tipo, _info in DIFERENCA_INFO.items():
     PRODUTOS_CANAIS[_tipo.upper()] = [_info['canal_a'], _info['canal_b']]
 
 def detectar_produtos_disponiveis(caminho_caso):
     """
-    Retorna a lista de produtos (True_Color, AirMass, DaySnowFog, SWD, CPD, WVD, SOD, SWVD)
+    Retorna a lista de produtos (True_Color, AirMass, DaySnowFog, DayLandCloudFire, SimpleWV, SWD, CPD, WVD, SOD, SWVD)
     cujos canais necessários estão TODOS presentes no caso - um caso pode
     satisfazer vários produtos ao mesmo tempo (ex: uma pasta com os 16 canais).
     A ordem segue PRODUTOS_CANAIS: produtos com mais canais (mais específicos)
@@ -1177,7 +1365,7 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
     
     Parâmetros:
         caso: str - nome do caso
-        produto: str - 'True_Color', 'AirMass', 'DaySnowFog', 'Single_Band', 'SWD', 'CPD', 'WVD', 'SOD' ou 'SWVD'
+        produto: str - 'True_Color', 'AirMass', 'DaySnowFog', 'DayLandCloudFire', 'SimpleWV', 'Single_Band', 'SWD', 'CPD', 'WVD', 'SOD' ou 'SWVD'
         extent: list - [lon_min, lon_max, lat_min, lat_max]
         titulo: str - título personalizado
         cmap: str - colormap personalizado (apenas para Single_Band)
@@ -1221,6 +1409,12 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
 
     elif produto == 'DaySnowFog':
         plot_daysnowfog(caso, sat, extent=extent, titulo_personalizado=titulo)
+
+    elif produto == 'DayLandCloudFire':
+        plot_daylandcloudfire(caso, sat, extent=extent, titulo_personalizado=titulo)
+
+    elif produto == 'SimpleWV':
+        plot_simple_wv(caso, sat, extent=extent, titulo_personalizado=titulo)
 
     elif produto == 'SWD':
         plot_diferenca(caso, sat, 'swd', extent=extent, titulo_personalizado=titulo, cmap=cmap)

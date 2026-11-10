@@ -342,6 +342,30 @@ PRODUTOS_COMPOSTOS = {
         'aplicacao': 'Distinção entre neve/solo e nuvens baixas/nevoeiro; fase das nuvens (somente diurno) - fonte: QuickGuide_DaySnowFog.pdf (CIRA/NASA SPoRT)',
         'emoji': '❄️',
     },
+    'DayLandCloudFire': {
+        'canais': ['ch02', 'ch03', 'ch06'],
+        'nome_canais': {
+            'ch02': 'VIS 0.64µm - Canal Vermelho',
+            'ch03': 'NIR 0.86µm - Canal Veggie',
+            'ch06': 'NIR 2.2µm - Canal Tamanho de Partícula',
+        },
+        'titulo': 'DAY LAND CLOUD/FIRE RGB',
+        'formula': 'Red=CH06 (0/100%) | Green=CH03 (0/100%) | Blue=CH02 (0/100%) | gama 1',
+        'aplicacao': 'Focos de calor, fumaça, cicatrizes de queimada e cobertura de neve/gelo (somente diurno) - fonte: QuickGuide_GOESR_DayLandCloudFireRGB_final-1.pdf (NASA SPoRT)',
+        'emoji': '🔥',
+    },
+    'SimpleWV': {
+        'canais': ['ch08', 'ch10', 'ch13'],
+        'nome_canais': {
+            'ch08': "WV 6.2µm - Vapor d'Água de Alto Nível",
+            'ch10': "WV 7.3µm - Vapor d'Água de Baixo Nível",
+            'ch13': 'IR 10.3µm - Canal de Janela Limpa',
+        },
+        'titulo': 'SIMPLE WATER VAPOR RGB',
+        'formula': 'Red=CH13 inv. (5.81/-70.86C) | Green=CH08 inv. (-30.48/-58.49C) | Blue=CH10 inv. (-12.12/-28.03C)',
+        'aplicacao': "Distribuição vertical do vapor d'água: retorno de umidade, esteiras transportadoras, jatos - fonte: Simple_Water_Vapor_RGB-1.pdf (NOAA/NWS)",
+        'emoji': '🌫️',
+    },
     'SWD': {
         'canais': ['ch13', 'ch15'],
         'nome_canais': {

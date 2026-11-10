@@ -16,6 +16,10 @@ Download de AirMass RGB (canais 8, 10, 12 e 13 - faixas oficiais NASA SPoRT);
 
 Download de Day Snow-Fog RGB (canais 3, 5, 7 e 13 - faixas oficiais CIRA/NASA SPoRT);
 
+Download de Day Land Cloud/Fire RGB (canais 2, 3 e 6 - faixas oficiais NASA SPoRT);
+
+Download de Simple Water Vapor RGB (canais 8, 10 e 13 - faixas oficiais NOAA/NWS);
+
 Download de SWD - Split Window Difference (canais 13 e 15);
 
 Download de CPD - Cloud Phase Difference (canais 11 e 14, fórmula CH14-CH11 conforme guia oficial CIMSS);
@@ -94,6 +98,10 @@ Download e plotagem AirMass RGB para GOES-16 e GOES-19;
 
 Download e plotagem Day Snow-Fog RGB (somente diurno) para GOES-16 e GOES-19;
 
+Download e plotagem Day Land Cloud/Fire RGB (somente diurno) para GOES-16 e GOES-19;
+
+Download e plotagem Simple Water Vapor RGB para GOES-16 e GOES-19;
+
 Download e plotagem SWD (Split Window Difference) para GOES-16 e GOES-19;
 
 Download e plotagem CPD (Cloud Phase Difference) para GOES-16 e GOES-19;
@@ -133,6 +141,12 @@ AirMass RGB
 
 Day Snow-Fog RGB
 ![Furacão Melissa - GOES-19 - Day Snow-Fog](/docs/MELISSA_GOES19_daysnowfog_202510281600.png)
+
+Day Land Cloud/Fire RGB
+![Furacão Melissa - GOES-19 - Day Land Cloud/Fire](/docs/MELISSA_GOES19_daylandcloudfire_202510281600.png)
+
+Simple Water Vapor RGB
+![Furacão Melissa - GOES-19 - Simple Water Vapor](/docs/MELISSA_GOES19_simplewv_202510281600.png)
 
 SWD (Split Window Difference)
 ![Furacão Melissa - GOES-19 - SWD](/docs/MELISSA_GOES19_swd_202510281600.png)
