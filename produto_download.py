@@ -329,6 +329,19 @@ PRODUTOS_COMPOSTOS = {
         'aplicacao': 'Monitoramento de ciclogênese, jatos e anomalias de vorticidade potencial (PV) - fonte: QuickGuide_GOESR_AirMassRGB_final.pdf (NASA SPoRT)',
         'emoji': '🌪️',
     },
+    'DaySnowFog': {
+        'canais': ['ch03', 'ch05', 'ch07', 'ch13'],
+        'nome_canais': {
+            'ch03': 'NIR 0.86µm - Canal Veggie',
+            'ch05': 'NIR 1.6µm - Canal Neve/Gelo',
+            'ch07': 'IR 3.9µm - Canal Shortwave Window',
+            'ch13': 'IR 10.3µm - Canal de Janela Limpa',
+        },
+        'titulo': 'DAY SNOW-FOG RGB',
+        'formula': 'Red=CH03 (0/100%) | Green=CH05 (0/70%) | Blue=CH07-CH13 (0/30C) | gama 1.7',
+        'aplicacao': 'Distinção entre neve/solo e nuvens baixas/nevoeiro; fase das nuvens (somente diurno) - fonte: QuickGuide_DaySnowFog.pdf (CIRA/NASA SPoRT)',
+        'emoji': '❄️',
+    },
     'SWD': {
         'canais': ['ch13', 'ch15'],
         'nome_canais': {
