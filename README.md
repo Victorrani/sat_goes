@@ -87,12 +87,18 @@ plot_prod(caso, "AirMass", legenda=True)    # com a legenda dentro do mapa
 plot_prod(caso, "DaySnowFog", legenda=True, extent=[-60, -35, -38, -13])
 ```
 
-No `2.plot_sat.py` (modo interativo), a opção não é perguntada: para sair com legenda, edite a
-última linha da função `main()`:
+No `2.plot_sat.py` (modo interativo), quando o produto escolhido é um desses RGBs, o script
+pergunta depois do título:
 
-```python
-plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap, legenda=True)
 ```
+==================================================
+🎨 LEGENDA DAS CORES
+==================================================
+Deseja a legenda das cores dentro do mapa? (s/n):
+```
+
+`s` liga a legenda; qualquer outra resposta (ou Enter) deixa sem. Para os outros produtos a
+pergunta não aparece.
 
 As funções de cada produto também aceitam a opção diretamente:
 `plot_airmass`, `plot_daysnowfog`, `plot_daylandcloudfire` e `plot_simple_wv`

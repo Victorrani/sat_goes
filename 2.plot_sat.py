@@ -14,6 +14,9 @@ from produto_plot import (
 )
 import os
 
+# RGBs que têm legenda das cores (só para eles a pergunta da legenda aparece)
+PRODUTOS_COM_LEGENDA = ['AirMass', 'DaySnowFog', 'DayLandCloudFire', 'SimpleWV']
+
 def main():
     print()
     print('#'*50)
@@ -79,11 +82,20 @@ def main():
     opcao_titulo = input("Deseja título personalizado? (s/n): ").strip().lower()
     titulo = obter_titulo_usuario() if opcao_titulo == 's' else None
 
-    # 6. Executar plotagem
+    # 6. Legenda das cores (só nos RGBs que têm legenda; padrão: sem)
+    legenda = False
+    if produto in PRODUTOS_COM_LEGENDA:
+        print("\n" + "="*50)
+        print("🎨 LEGENDA DAS CORES")
+        print("="*50)
+        opcao_legenda = input("Deseja a legenda das cores dentro do mapa? (s/n): ").strip().lower()
+        legenda = opcao_legenda == 's'
+
+    # 7. Executar plotagem
     print("\n" + "="*50)
     print(f"🚀 INICIANDO PLOTAGEM: {produto.upper()}")
     print("="*50)
-    plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap)
+    plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap, legenda=legenda)
 
 if __name__ == "__main__":
     main()
