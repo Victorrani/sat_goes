@@ -14,7 +14,7 @@ import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 import warnings
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
-from matplotlib.patches import Patch, Rectangle
+from matplotlib.patches import Patch
 
 # Configuração inicial
 matplotlib.use('Agg')
@@ -393,9 +393,7 @@ def plot_simple_channel(caso, canal, sat, extent=None, titulo_personalizado=None
                 titulo = f"{data_str} UTC\n{sat.upper()} | {canal.upper()} ({tipo_str_titulo})"
                 nome_arquivo = f"{sat.upper()}_{canal}{sufixo_noaa}_{data_str}.png"
             
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=300, bbox_inches='tight')
-            plt.close(fig)
+            salvar_figura(fig, ax, os.path.join(caminho_fig, nome_arquivo), titulo, dpi=300)
             arq.close()
             
         except Exception as e:
@@ -523,9 +521,7 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
                 titulo = f"{data_str} UTC\n{sat.upper()} | True Color RGB"
                 nome_arquivo = f"{sat.upper()}_true_color_{data_str}.png"
             
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
-            plt.close(fig)
+            salvar_figura(fig, ax, os.path.join(caminho_fig, nome_arquivo), titulo, dpi=150)
             
             arq1.close()
             arq2.close()
@@ -535,6 +531,94 @@ def plot_true_color(caso, sat, extent=None, titulo_personalizado=None):
             print(f"   ERRO ao processar {data_str}: {e}")
     
     print(f"Plotagem True Color concluida!")
+
+# ============================================================================
+# SALVAMENTO DAS FIGURAS (recorte automático ou moldura fixa)
+# ============================================================================
+
+# Moldura fixa (opcional). None = padrão: figura recortada com bbox_inches='tight' e
+# título em negrito (cada produto sai de um tamanho). A legenda dos RGB vai sempre dentro
+# do mapa (legenda_rgb_no_mapa), nos dois modos.
+# Quem precisa de todas as imagens do mesmo tamanho define um dicionário antes de plotar
+# (ex.: MONAN_FORECAST/scripts/sat_fds.py, para casar com os mapas de chuva do MONAN):
+#   produto_plot.MOLDURA = {
+#       'figsize': (w, h),         polegadas
+#       'dpi': 200,
+#       'ax':   [x0, y0, w, h],    posição do mapa (fração da figura)
+#       'cbar': [x0, y0, w, h],    posição da barra de cores (fração da figura)
+#       'fonte': 10,               tamanho das letras (títulos, rótulos, barra)
+#       'satelite': 'GOES-19',     nome no título
+#   }
+# Com moldura: título em 3 linhas à esquerda e 3 à direita (como os mapas do MONAN),
+# horário de Brasília.
+MOLDURA = None
+
+DIAS_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
+
+
+def salvar_figura(fig, ax, caminho, titulo, dpi=150, legenda=None, nota=None):
+    """Salva e fecha a figura. titulo: 'AAAAMMDDhhmm UTC\\n<SAT> | <produto>'."""
+    if MOLDURA is None:
+        ax.set_title(titulo, loc='left', fontweight='bold', fontsize=12)
+        if legenda:
+            legenda_rgb_no_mapa(ax, legenda, nota, fonte=10)
+        fig.savefig(caminho, dpi=dpi, bbox_inches='tight')
+    else:
+        aplicar_moldura(fig, ax, titulo, legenda=legenda, nota=nota)
+        fig.savefig(caminho, dpi=MOLDURA['dpi'])
+    plt.close(fig)
+
+
+def aplicar_moldura(fig, ax, titulo, legenda=None, nota=None):
+    """Põe mapa, barra de cores, títulos e legenda nas posições fixas de MOLDURA."""
+    from datetime import datetime, timedelta
+    m = MOLDURA
+    fonte = m.get('fonte', 10)
+    fig.set_size_inches(*m['figsize'])
+    barras = [a for a in fig.axes if a is not ax]   # barra de cores (se o produto tem)
+    ax.set_position(m['ax'])
+    for barra in barras:
+        barra.set_position(m['cbar'])
+        barra.tick_params(labelsize=fonte)
+        barra.yaxis.label.set_size(fonte)
+    # rótulos de lat/lon (no cartopy >= 0.23 a grade é um artista do eixo; antes, ax._gridliners)
+    from cartopy.mpl.gridliner import Gridliner
+    grades = [a for a in ax.artists if isinstance(a, Gridliner)] or getattr(ax, '_gridliners', [])
+    for gl in grades:
+        gl.xlabel_style = {'size': fonte}
+        gl.ylabel_style = {'size': fonte}
+
+    # Título: 'AAAAMMDDhhmm UTC\n<SAT> | <produto>' -> estilo dos mapas do MONAN
+    linhas = titulo.split('\n')
+    t = datetime.strptime(linhas[0].split()[0], '%Y%m%d%H%M')
+    produto = linhas[1].split(' | ')[-1] if len(linhas) > 1 else ''
+    local = t - timedelta(hours=3)
+    sat = m.get('satelite', 'GOES')
+    ax.set_title(f"{produto}\n{DIAS_SEMANA[local.weekday()]} {local:%d/%m %H:%M} (Brasília)\n"
+                 f"{sat} ABI", fontsize=fonte, loc='left')
+    ax.set_title(f"Imagem: {t:%d/%m/%Y %H:%M}Z\nSatélite: {sat}\nFonte: NOAA",
+                 fontsize=fonte, loc='right')
+
+    if legenda:
+        legenda_rgb_no_mapa(ax, legenda, nota, fonte=fonte)
+
+
+def legenda_rgb_no_mapa(ax, legenda, nota=None, fonte=10):
+    """Legenda das cores de um RGB DENTRO do mapa (canto inferior direito, fundo semitransparente).
+
+    legenda: lista de (cores da amostra, texto principal, descrição da cor); a amostra usa a
+    primeira cor. A nota (ex.: 'As cores variam com hora...') vai como título da legenda.
+    """
+    nota_txt = (nota or '').replace('\n', ' ')
+    itens = [Patch(facecolor=cores[0], edgecolor='#1a1a1a', linewidth=0.5,
+                   label=f"{texto.replace(chr(10), ' ')} ({descricao})")
+             for cores, texto, descricao in legenda]
+    leg = ax.legend(handles=itens, loc='lower right', fontsize=fonte - 2, framealpha=0.85,
+                    title=nota_txt, title_fontsize=fonte - 3, borderpad=0.5,
+                    handlelength=1.2, handleheight=1.0, labelspacing=0.35)
+    leg.get_title().set_style('italic')
+    leg.set_zorder(1000)
+
 
 # ============================================================================
 # AIRMASS RGB (ch08, ch10, ch12, ch13)
@@ -553,55 +637,6 @@ AIRMASS_LEGENDA = [
     (['#335A25'], 'Nuvem baixa', 'verde, azul escuro'),
     (['#6E008C'], 'Efeito de limbo', 'roxo / azul'),
 ]
-
-def adicionar_legenda_rgb(fig, ax, legenda, nota='As cores variam com hora,\nestação e latitude.'):
-    """
-    Adiciona abaixo do eixo x a legenda com o significado das cores de um RGB.
-    legenda: lista de (cores da amostra, texto principal, descrição da cor).
-    A legenda usa polegadas como coordenadas, então o tamanho do texto independe
-    do extent do mapa.
-    """
-    n_colunas = 3
-    largura, altura_linha = 6.4, 0.46
-    n_linhas = int(np.ceil((len(legenda) + 1) / n_colunas))  # +1: nota final
-    altura = n_linhas * altura_linha
-    afastamento_eixo = 0.42  # espaço para os rótulos de longitude
-    fig_w, fig_h = fig.get_size_inches()
-
-    ax.apply_aspect()
-    pos = ax.get_position()
-    centro_x = (pos.x0 + pos.x1) / 2
-    painel = fig.add_axes([centro_x - largura / fig_w / 2,
-                           pos.y0 - (afastamento_eixo + altura) / fig_h,
-                           largura / fig_w, altura / fig_h])
-    painel.axis('off')
-    painel.set_xlim(0, largura)
-    painel.set_ylim(altura, 0)
-    tinta, tinta_suave = '#1a1a1a', '#555555'
-
-    largura_coluna = largura / n_colunas
-    amostra_w, amostra_h = 0.3, 0.24
-    for i, (cores, texto, descricao) in enumerate(legenda):
-        x = (i % n_colunas) * largura_coluna
-        y = (i // n_colunas) * altura_linha + 0.03
-        passo = amostra_w / len(cores)
-        for j, cor in enumerate(cores):
-            painel.add_patch(Rectangle((x + j * passo, y), passo, amostra_h,
-                                       facecolor=cor, edgecolor='none'))
-        painel.add_patch(Rectangle((x, y), amostra_w, amostra_h, facecolor='none',
-                                   edgecolor=tinta, linewidth=0.6))
-        x_texto = x + amostra_w + 0.08
-        painel.text(x_texto, y - 0.02, texto, fontsize=8, fontweight='bold',
-                    color=tinta, va='top', linespacing=1.1)
-        painel.text(x_texto, y + 0.12 * (texto.count('\n') + 1) - 0.005, descricao,
-                    fontsize=7.5, style='italic', color=tinta_suave, va='top')
-
-    i_nota = len(legenda)
-    painel.text((i_nota % n_colunas) * largura_coluna,
-                (i_nota // n_colunas) * altura_linha + 0.03,
-                nota,
-                fontsize=7, style='italic', color=tinta_suave, va='top', linespacing=1.15)
-
 
 def salvar_mapa_rgb(RGB, lats, lons, extent, titulo, caminho_arquivo, legenda,
                     nota='As cores variam com hora,\nestação e latitude.'):
@@ -633,16 +668,12 @@ def salvar_mapa_rgb(RGB, lats, lons, extent, titulo, caminho_arquivo, legenda,
     gl.xlabel_style = {'fontsize': 14}
     gl.ylabel_style = {'fontsize': 14}
 
-    plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-    # Depois do título: fig.add_axes muda o eixo corrente usado por plt.title
-    adicionar_legenda_rgb(fig, ax, legenda, nota=nota)
-    plt.savefig(caminho_arquivo, dpi=150, bbox_inches='tight')
-    plt.close(fig)
+    salvar_figura(fig, ax, caminho_arquivo, titulo, dpi=150, legenda=legenda, nota=nota)
 
 NOTA_DIURNO = 'Somente diurno. As cores variam\ncom hora, estação e latitude.'
 
 
-def plot_airmass(caso, sat, extent=None, titulo_personalizado=None):
+def plot_airmass(caso, sat, extent=None, titulo_personalizado=None, legenda=False):
     """
     Plota o produto Airmass RGB, usado para monitorar ciclogênese, jatos e
     anomalias de vorticidade potencial (PV).
@@ -713,7 +744,8 @@ def plot_airmass(caso, sat, extent=None, titulo_personalizado=None):
                 nome_arquivo = f"{sat.upper()}_airmass_{ts}.png"
 
             salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
-                            os.path.join(caminho_fig, nome_arquivo), AIRMASS_LEGENDA)
+                            os.path.join(caminho_fig, nome_arquivo),
+                            AIRMASS_LEGENDA if legenda else None)
 
             for c in canais:
                 ds[c].close()
@@ -737,7 +769,7 @@ DAYSNOWFOG_LEGENDA = [
     (['#A83C32'], 'Neve', 'vermelho / laranja'),
 ]
 
-def plot_daysnowfog(caso, sat, extent=None, titulo_personalizado=None):
+def plot_daysnowfog(caso, sat, extent=None, titulo_personalizado=None, legenda=False):
     """
     Plota o produto Day Snow-Fog RGB, usado para distinguir neve/solo de nuvens
     baixas e nevoeiro, e nuvens de água de nuvens de gelo. Somente diurno.
@@ -818,8 +850,8 @@ def plot_daysnowfog(caso, sat, extent=None, titulo_personalizado=None):
                 nome_arquivo = f"{sat.upper()}_daysnowfog_{ts}.png"
 
             salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
-                            os.path.join(caminho_fig, nome_arquivo), DAYSNOWFOG_LEGENDA,
-                            nota=NOTA_DIURNO)
+                            os.path.join(caminho_fig, nome_arquivo),
+                            DAYSNOWFOG_LEGENDA if legenda else None, nota=NOTA_DIURNO)
 
             for c in canais:
                 ds[c].close()
@@ -846,7 +878,7 @@ DAYLANDCLOUDFIRE_LEGENDA = [
     (['#C01B1C'], 'Foco de calor / fogo', 'vermelho'),
 ]
 
-def plot_daylandcloudfire(caso, sat, extent=None, titulo_personalizado=None):
+def plot_daylandcloudfire(caso, sat, extent=None, titulo_personalizado=None, legenda=False):
     """
     Plota o produto Day Land Cloud/Fire RGB, usado para focos de calor, fumaça,
     cicatrizes de queimada e cobertura de neve/gelo. Somente diurno.
@@ -924,7 +956,7 @@ def plot_daylandcloudfire(caso, sat, extent=None, titulo_personalizado=None):
                 nome_arquivo = f"{sat.upper()}_daylandcloudfire_{ts}.png"
 
             salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
-                            os.path.join(caminho_fig, nome_arquivo), DAYLANDCLOUDFIRE_LEGENDA,
+                            os.path.join(caminho_fig, nome_arquivo), DAYLANDCLOUDFIRE_LEGENDA if legenda else None,
                             nota=NOTA_DIURNO)
 
             for c in canais:
@@ -952,7 +984,7 @@ SIMPLEWV_LEGENDA = [
     (['#FFFFFF'], 'Nuvens altas e espessas', 'branco'),
 ]
 
-def plot_simple_wv(caso, sat, extent=None, titulo_personalizado=None):
+def plot_simple_wv(caso, sat, extent=None, titulo_personalizado=None, legenda=False):
     """
     Plota o produto Simple Water Vapor RGB, usado para ver a distribuição
     vertical do vapor d'água: retorno de umidade em níveis baixos sem nuvens,
@@ -1020,7 +1052,7 @@ def plot_simple_wv(caso, sat, extent=None, titulo_personalizado=None):
                 nome_arquivo = f"{sat.upper()}_simplewv_{ts}.png"
 
             salvar_mapa_rgb(RGB, lats, lons, extent, titulo,
-                            os.path.join(caminho_fig, nome_arquivo), SIMPLEWV_LEGENDA)
+                            os.path.join(caminho_fig, nome_arquivo), SIMPLEWV_LEGENDA if legenda else None)
 
             for c in canais:
                 ds[c].close()
@@ -1211,9 +1243,7 @@ def plot_diferenca(caso, sat, tipo, extent=None, titulo_personalizado=None, cmap
                 titulo = f"{ts} UTC\n{sat.upper()} | {info['titulo']}"
                 nome_arquivo = f"{sat.upper()}_{tipo}_{ts}.png"
 
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
-            plt.close(fig)
+            salvar_figura(fig, ax, os.path.join(caminho_fig, nome_arquivo), titulo, dpi=150)
 
             arq_a.close()
             arq_b.close()
@@ -1343,9 +1373,7 @@ def plot_wvd_overshooting(caso, sat, extent=None, titulo_personalizado=None, lim
                 titulo = f"{ts} UTC\n{sat.upper()} | Water Vapor - IR Difference (OT > {limiar}K)"
                 nome_arquivo = f"{sat.upper()}_wvd_{ts}.png"
 
-            plt.title(titulo, loc='left', fontweight='bold', fontsize=12)
-            plt.savefig(os.path.join(caminho_fig, nome_arquivo), dpi=150, bbox_inches='tight')
-            plt.close(fig)
+            salvar_figura(fig, ax, os.path.join(caminho_fig, nome_arquivo), titulo, dpi=150)
 
             arq08.close()
             arq13.close()
@@ -1359,7 +1387,7 @@ def plot_wvd_overshooting(caso, sat, extent=None, titulo_personalizado=None, lim
 # FUNÇÃO PRINCIPAL EXPORTADA
 # ============================================================================
 
-def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13=False):
+def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13=False, legenda=False):
     """
     Função principal para plotagem de produtos GOES
     
@@ -1370,6 +1398,8 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
         titulo: str - título personalizado
         cmap: str - colormap personalizado (apenas para Single_Band)
         usar_noaa_ch13: bool - Força uso da paleta NOAA para ch13
+        legenda: bool - True põe a legenda das cores dentro do mapa (RGBs: AirMass, DaySnowFog,
+                         DayLandCloudFire, SimpleWV); padrão sem
     """
     
     print("\n" + "="*50)
@@ -1405,16 +1435,16 @@ def plot_prod(caso, produto, extent=None, titulo=None, cmap=None, usar_noaa_ch13
         plot_true_color(caso, sat, extent=extent, titulo_personalizado=titulo)
 
     elif produto == 'AirMass':
-        plot_airmass(caso, sat, extent=extent, titulo_personalizado=titulo)
+        plot_airmass(caso, sat, extent=extent, titulo_personalizado=titulo, legenda=legenda)
 
     elif produto == 'DaySnowFog':
-        plot_daysnowfog(caso, sat, extent=extent, titulo_personalizado=titulo)
+        plot_daysnowfog(caso, sat, extent=extent, titulo_personalizado=titulo, legenda=legenda)
 
     elif produto == 'DayLandCloudFire':
-        plot_daylandcloudfire(caso, sat, extent=extent, titulo_personalizado=titulo)
+        plot_daylandcloudfire(caso, sat, extent=extent, titulo_personalizado=titulo, legenda=legenda)
 
     elif produto == 'SimpleWV':
-        plot_simple_wv(caso, sat, extent=extent, titulo_personalizado=titulo)
+        plot_simple_wv(caso, sat, extent=extent, titulo_personalizado=titulo, legenda=legenda)
 
     elif produto == 'SWD':
         plot_diferenca(caso, sat, 'swd', extent=extent, titulo_personalizado=titulo, cmap=cmap)

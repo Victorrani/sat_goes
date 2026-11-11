@@ -69,6 +69,38 @@ Plotagem das imagens
 python 2.plot_sat.py
 ```
 
+### 🎨 Legenda das cores nos RGBs
+
+Os RGBs **AirMass**, **Day Snow-Fog**, **Day Land Cloud/Fire** e **Simple Water Vapor** podem
+trazer a legenda com o significado das cores (chaves dos QuickGuides da NASA SPoRT/CIRA).
+A legenda fica **dentro do mapa**, no canto inferior direito, com fundo semitransparente.
+
+**Padrão: sem legenda** (`legenda=False`). Para ligar, passe `legenda=True`:
+
+```python
+from produto_plot import plot_prod
+
+caso = "goes19_20260510_20260510"   # pasta em fig_dados/
+
+plot_prod(caso, "AirMass")                  # sem legenda (padrão)
+plot_prod(caso, "AirMass", legenda=True)    # com a legenda dentro do mapa
+plot_prod(caso, "DaySnowFog", legenda=True, extent=[-60, -35, -38, -13])
+```
+
+No `2.plot_sat.py` (modo interativo), a opção não é perguntada: para sair com legenda, edite a
+última linha da função `main()`:
+
+```python
+plot_prod(caso, produto, extent=extent, titulo=titulo, cmap=cmap, legenda=True)
+```
+
+As funções de cada produto também aceitam a opção diretamente:
+`plot_airmass`, `plot_daysnowfog`, `plot_daylandcloudfire` e `plot_simple_wv`
+(ex.: `plot_airmass(caso, "goes19", legenda=True)`).
+
+Os outros produtos não usam essa opção: canais, SWD, CPD, SOD e SWVD têm barra de cores;
+True Color não tem legenda; e o WVD (overshooting) sempre mostra o item "WVD > limiar".
+
 📁 Estrutura do repositório (Ainda será melhorado)
 ```bash
 ├── 1.get_sat.py
